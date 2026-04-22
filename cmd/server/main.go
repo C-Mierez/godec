@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/c-mierez/godec-mvp/internal/platform/graceful"
+	"github.com/c-mierez/godec-mvp/internal/lib/graceful"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 )
@@ -15,6 +15,7 @@ func main() {
 
 	e := echo.New()
 	e.Use(middleware.RequestLogger())
+	e.Use(middleware.Recover())
 
 	e.GET("/hello", func(c *echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
