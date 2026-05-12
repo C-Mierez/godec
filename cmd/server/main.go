@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/c-mierez/godec-mvp/internal/lib/graceful"
+	"github.com/c-mierez/godec/internal/lib/graceful"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 )

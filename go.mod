@@ -1,4 +1,4 @@
-module github.com/c-mierez/godec-mvp
+module github.com/c-mierez/godec
 
 go 1.26.2
 
