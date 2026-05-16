@@ -22,9 +22,9 @@ type HealthResponse struct {
 	Checks    map[string]string `json:"checks,omitempty"`
 }
 
-func (h *HealthHandlers) RegisterHandlers(g *echo.Group) {
-	g.GET(HealthLiveEndpoint, h.Live)
-	g.GET(HealthReadyEndpoint, h.Ready)
+func (h *HealthHandlers) RegisterHandlers(g *echo.Group, middleware ...echo.MiddlewareFunc) {
+	g.GET(HealthLiveEndpoint, h.Live, middleware...)
+	g.GET(HealthReadyEndpoint, h.Ready, middleware...)
 }
 
 func (h *HealthHandlers) Live(c *echo.Context) error {

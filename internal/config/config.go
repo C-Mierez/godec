@@ -10,7 +10,7 @@ type ServerEnv struct {
 }
 
 type DatabaseEnv struct {
-	URL string `env:"DATABASE_URL"`
+	// URL string `env:"DATABASE_URL"`
 }
 
 type Config struct {

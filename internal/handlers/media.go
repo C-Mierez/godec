@@ -11,9 +11,8 @@ type MediaHandlers struct {
 	// Services and repositories
 }
 
-func (h *MediaHandlers) RegisterHandlers(g *echo.Group) {
-	g.POST("/media/upload-url", h.GetUploadURL)
-	g.GET("/media", h.ListMedias)
+func (h *MediaHandlers) RegisterHandlers(g *echo.Group, middleware ...echo.MiddlewareFunc) {
+	g.POST("/media/upload-url", h.GetUploadURL, middleware...)
 }
 
 // Generates a presigned upload URL for media
@@ -22,10 +21,4 @@ func (h *MediaHandlers) GetUploadURL(c *echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{
 		"uploadURL": "placeholder",
 	})
-}
-
-// Returns a list of all media
-func (h *MediaHandlers) ListMedias(c *echo.Context) error {
-	// Placeholder
-	return c.JSON(http.StatusOK, []interface{}{})
 }

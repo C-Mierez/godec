@@ -8,6 +8,8 @@ require (
 )
 
 require (
+	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
+	github.com/labstack/echo-jwt/v5 v5.0.1 // indirect
 	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
 	golang.org/x/time v0.14.0 // indirect

@@ -18,8 +18,8 @@ func (s *Server) registerRoutes() {
 
 }
 
-func registerHandlers(g *echo.Group, handlers []handlers.Handler) {
+func registerHandlers(g *echo.Group, handlers []handlers.Handler, middleware ...echo.MiddlewareFunc) {
 	for _, h := range handlers {
-		h.RegisterHandlers(g)
+		h.RegisterHandlers(g, middleware...)
 	}
 }
