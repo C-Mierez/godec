@@ -7,7 +7,7 @@ import (
 
 func (s *Server) registerRoutes() {
 	// General routes
-	registerHandlers(s.echo.Group("/"), []handlers.Handler{
+	registerHandlers(s.echo.Group(""), []handlers.Handler{
 		&handlers.HealthHandlers{},
 	})
 
