@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - mvp
+  pull_request:
+
+jobs:
+  test:
+    name: Go Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Check Go formatting
+        run: |
+          files=$(find . -name '*.go' -not -path './.git/*')
+          if [ -n "$(gofmt -l $files)" ]; then
+            echo "Go files are not formatted"
+            gofmt -l $files
+            exit 1
+          fi
+
+      - name: Run tests
+        run: go test ./...
+
+      - name: Check go.mod and go.sum are tidy
+        run: |
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+
+  envsync:
+    name: Env Sync Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Validate env example
+        run: go run ./cmd/envsync check --file .env.example
