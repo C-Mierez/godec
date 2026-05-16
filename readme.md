@@ -25,19 +25,19 @@ lefthook install
 ### Sync env files locally
 
 ```bash
-go run ./cmd/envsync fix
+go run ./ci/envsync/cmd fix
 ```
 
 ### Check env files without mutating them
 
 ```bash
-go run ./cmd/envsync check
+go run ./ci/envsync/cmd check
 ```
 
 ### Check env files in GitHub Actions
 
 ```bash
-go run ./cmd/envsync check --file .env.example
+go run ./ci/envsync/cmd check --file .env.example
 ```
 
 ### Notes
