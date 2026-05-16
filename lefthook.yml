@@ -1,9 +1,9 @@
 envsync:
-  jobs:
-    - name: envsync
-      run: go run ./cmd/envsync fix
+    jobs:
+        - name: envsync
+          run: go run ./cmd/envsync fix
 
 pre-commit:
-  jobs:
-    - name: envsync
-      run: go run ./cmd/envsync fix
+    jobs:
+        - name: envsync
+          run: go run ./cmd/envsync fix

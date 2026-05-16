@@ -34,7 +34,13 @@ go run ./cmd/envsync fix
 go run ./cmd/envsync check
 ```
 
+### Check env files in GitHub Actions
+
+```bash
+go run ./cmd/envsync check --file .env.example
+```
+
 ### Notes
 
 - `fix` reads [internal/config/config.go](internal/config/config.go) first, then creates or appends missing keys in `.env` and `.env.example`.
-- `check` only reports missing or stale keys, which makes it safe for GitHub Actions.
+- `check` only reports missing or stale keys. In GitHub Actions, pass `--file .env.example` because `.env` is intentionally local-only.
