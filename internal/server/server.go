@@ -2,18 +2,19 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
 	"github.com/c-mierez/godec/internal/config"
-	"github.com/c-mierez/godec/internal/lib/graceful"
+	"github.com/c-mierez/godec/pkg/lib/graceful"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v5"
 )
 
 type Server struct {
 	echo   *echo.Echo
 	config *config.Config
+	db     *pgxpool.Pool
 }
 
 func NewServer(cfg *config.Config) *Server {
@@ -24,10 +25,7 @@ func NewServer(cfg *config.Config) *Server {
 }
 
 func (s *Server) Start() {
-	s.registerMiddleware()
-	s.registerRoutes()
-
-	address := fmt.Sprintf(":%s", s.config.Server.Port)
+	address := s.config.Server.ServerAddress
 	sc := echo.StartConfig{
 		Address:         address,
 		GracefulTimeout: 20 * time.Second,
@@ -35,6 +33,18 @@ func (s *Server) Start() {
 
 	graceful.RunWithGracefulShutdown(
 		func(executionContext context.Context) {
+			// Establish DB connection pool using the execution context so it follows cancellation
+			pool, err := pgxpool.New(executionContext, s.config.Database.URL)
+			if err != nil {
+				log.Printf("Failed to create DB pool: %v", err)
+				return
+			}
+			s.db = pool
+
+			s.registerMiddleware()
+			s.registerRoutes()
+
+			// Start server
 			if err := sc.Start(executionContext, s.echo); err != nil {
 				log.Printf("Server error: %v", err)
 			}
@@ -42,7 +52,10 @@ func (s *Server) Start() {
 		func() {
 			log.Println("Initiating graceful shutdown...")
 
-			// Close DB, Notify other services, etc.
+			// Close DB pool if present
+			if s.db != nil {
+				s.db.Close()
+			}
 
 			log.Println("Graceful shutdown complete.")
 		},
