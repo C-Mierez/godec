@@ -49,7 +49,10 @@ func runFix(args []string) int {
 		return 1
 	}
 
-	printFixReport(report)
+	if err := printFixReport(report); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
 
 	return 0
 }
@@ -65,7 +68,10 @@ func runCheck(args []string) int {
 		return 1
 	}
 
-	fmt.Fprintln(os.Stdout, "envsync check: ok")
+	if _, err := fmt.Fprintln(os.Stdout, "envsync check: ok"); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
 
 	return 0
 }
@@ -97,10 +103,10 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "usage: envsync <fix|check> [--config path] [--file path ...]")
 }
 
-func printFixReport(report *envsync.FixReport) {
+func printFixReport(report *envsync.FixReport) error {
 	if report == nil || len(report.Files) == 0 {
-		fmt.Fprintln(os.Stdout, "envsync fix: no changes")
-		return
+		_, err := fmt.Fprintln(os.Stdout, "envsync fix: no changes")
+		return err
 	}
 
 	for _, change := range report.Files {
@@ -119,8 +125,12 @@ func printFixReport(report *envsync.FixReport) {
 			parts = append(parts, "updated")
 		}
 
-		fmt.Fprintf(os.Stdout, "envsync fix: %s: %s\n", change.Path, strings.Join(parts, "; "))
+		if _, err := fmt.Fprintf(os.Stdout, "envsync fix: %s: %s\n", change.Path, strings.Join(parts, "; ")); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 func printCheckError(err error) {

@@ -12,6 +12,7 @@ pre-commit:
   jobs:
     - name: envsync
       run: go run ./cmd/envsync fix
+      stage_fixed: true
 
     - name: gofmt
       glob: "**/*.go"
