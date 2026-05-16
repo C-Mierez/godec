@@ -22,6 +22,15 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Check Go formatting
+        run: |
+          files=$(find . -name '*.go' -not -path './.git/*')
+          if [ -n "$(gofmt -l $files)" ]; then
+            echo "Go files are not formatted"
+            gofmt -l $files
+            exit 1
+          fi
+
       - name: Run tests
         run: go test ./...
 

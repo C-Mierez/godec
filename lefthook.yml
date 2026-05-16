@@ -1,9 +1,19 @@
 envsync:
-    jobs:
-        - name: envsync
-          run: go run ./cmd/envsync fix
+  jobs:
+    - name: envsync
+      run: go run ./cmd/envsync fix
+
+    - name: gofmt
+      glob: "**/*.go"
+      run: gofmt -w {staged_files}
+      stage_fixed: true
 
 pre-commit:
-    jobs:
-        - name: envsync
-          run: go run ./cmd/envsync fix
+  jobs:
+    - name: envsync
+      run: go run ./cmd/envsync fix
+
+    - name: gofmt
+      glob: "**/*.go"
+      run: gofmt -w {staged_files}
+      stage_fixed: true
