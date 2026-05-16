@@ -1,9 +1,9 @@
-package handlers
+package http
 
 import (
 	"net/http"
 
-	"github.com/c-mierez/godec/internal/lib/utils"
+	"github.com/c-mierez/godec/pkg/lib/utils"
 	"github.com/labstack/echo/v5"
 )
 

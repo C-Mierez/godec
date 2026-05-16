@@ -1,7 +1,7 @@
-package handlers
+package http
 
 import "github.com/labstack/echo/v5"
 
-type Handler interface {
+type HttpHandler interface {
 	RegisterHandlers(g *echo.Group, middleware ...echo.MiddlewareFunc)
 }
