@@ -1,43 +1,45 @@
 package config
 
 import (
-	"os"
+	"github.com/caarlos0/env/v11"
 )
+
+type ServerEnv struct {
+	Port string `env:"PORT" envDefault:"8080"`
+	Env  string `env:"ENV" envDefault:"development"`
+}
+
+type DatabaseEnv struct {
+	URL string `env:"DATABASE_URL"`
+}
 
 type Config struct {
 	Server struct {
-		Port string
-		Env  string
+		ServerEnv
 	}
 	Database struct {
-		URL string
+		DatabaseEnv
 	}
 }
-
-const (
-	DefaultPort = "8080"
-	DefaultEnv  = "development"
-)
 
 func Load() (*Config, error) {
 	cfg := &Config{}
 
-	// Server config
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = DefaultPort
+	// Load server configuration from environment variables
+	var serverEnv ServerEnv
+	err := env.ParseWithOptions(&serverEnv, env.Options{RequiredIfNoDef: true})
+	if err != nil {
+		return nil, err
 	}
+	cfg.Server.ServerEnv = serverEnv
 
-	cfg.Server.Port = port
-
-	env := os.Getenv("ENV")
-	if env == "" {
-		env = DefaultEnv
+	// Load database configuration from environment variables
+	var databaseEnv DatabaseEnv
+	err = env.ParseWithOptions(&databaseEnv, env.Options{RequiredIfNoDef: true})
+	if err != nil {
+		return nil, err
 	}
-	cfg.Server.Env = env
-
-	// Database config
-	cfg.Database.URL = os.Getenv("DATABASE_URL")
+	cfg.Database.DatabaseEnv = databaseEnv
 
 	return cfg, nil
 }
