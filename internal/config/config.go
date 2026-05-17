@@ -16,12 +16,22 @@ type DatabaseEnv struct {
 	URL string `env:"DATABASE_URL"`
 }
 
+type InternalEnv struct {
+	GOOSE_DRIVER        string `env:"GOOSE_DRIVER"`
+	GOOSE_DBSTRING      string `env:"GOOSE_DBSTRING"`
+	GOOSE_MIGRATION_DIR string `env:"GOOSE_MIGRATION_DIR"`
+	GOOSE_TABLE         string `env:"GOOSE_TABLE"`
+}
+
 type Config struct {
 	Server struct {
 		ServerEnv
 	}
 	Database struct {
 		DatabaseEnv
+	}
+	internal struct {
+		InternalEnv
 	}
 }
 

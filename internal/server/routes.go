@@ -5,23 +5,25 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
+type HttpHandler interface {
+	RegisterHandlers(g *echo.Group, middleware ...echo.MiddlewareFunc)
+}
+
 func (s *Server) registerRoutes() {
 	// General routes
-	registerHandlers(s.echo.Group(""), []handlers.HttpHandler{
+	registerHandlers(s.echo.Group(""), []HttpHandler{
 		&handlers.HealthHandlers{},
 	})
 
 	// API v1 routes
-	registerHandlers(s.echo.Group("/v1"), []handlers.HttpHandler{
+	registerHandlers(s.echo.Group("/v1"), []HttpHandler{
 		&handlers.MediaHandlers{},
-		&handlers.AuthHandlers{
-			AuthDb: s.db,
-		},
+		&handlers.GatewayHandlers{},
 	})
 
 }
 
-func registerHandlers(g *echo.Group, handlers []handlers.HttpHandler, middleware ...echo.MiddlewareFunc) {
+func registerHandlers(g *echo.Group, handlers []HttpHandler, middleware ...echo.MiddlewareFunc) {
 	for _, h := range handlers {
 		h.RegisterHandlers(g, middleware...)
 	}

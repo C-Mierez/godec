@@ -14,13 +14,14 @@ import (
 type Server struct {
 	echo   *echo.Echo
 	config *config.Config
-	db     *pgxpool.Pool
+	authDb *pgxpool.Pool
 }
 
 func NewServer(cfg *config.Config) *Server {
 	return &Server{
 		echo:   echo.New(),
 		config: cfg,
+		authDb: nil,
 	}
 }
 
@@ -39,7 +40,7 @@ func (s *Server) Start() {
 				log.Printf("Failed to create DB pool: %v", err)
 				return
 			}
-			s.db = pool
+			s.authDb = pool
 
 			s.registerMiddleware()
 			s.registerRoutes()
@@ -53,8 +54,8 @@ func (s *Server) Start() {
 			log.Println("Initiating graceful shutdown...")
 
 			// Close DB pool if present
-			if s.db != nil {
-				s.db.Close()
+			if s.authDb != nil {
+				s.authDb.Close()
 			}
 
 			log.Println("Graceful shutdown complete.")
