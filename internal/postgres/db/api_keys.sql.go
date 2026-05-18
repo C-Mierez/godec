@@ -13,12 +13,12 @@ import (
 
 const countActiveApiKeysByTenantID = `-- name: CountActiveApiKeysByTenantID :one
 SELECT
-	COUNT(*)
+        COUNT(*)
 FROM
-	api_keys
+        api_keys
 WHERE
-	tenant_id = $1
-	AND (expires_at IS NULL OR expires_at > NOW())
+        tenant_id = $1
+        AND (expires_at IS NULL OR expires_at > NOW())
 `
 
 func (q *Queries) CountActiveApiKeysByTenantID(ctx context.Context, tenantID pgtype.UUID) (int64, error) {
@@ -30,11 +30,11 @@ func (q *Queries) CountActiveApiKeysByTenantID(ctx context.Context, tenantID pgt
 
 const countApiKeysByTenantID = `-- name: CountApiKeysByTenantID :one
 SELECT
-	COUNT(*)
+        COUNT(*)
 FROM
-	api_keys
+        api_keys
 WHERE
-	tenant_id = $1
+        tenant_id = $1
 `
 
 func (q *Queries) CountApiKeysByTenantID(ctx context.Context, tenantID pgtype.UUID) (int64, error) {
@@ -46,11 +46,11 @@ func (q *Queries) CountApiKeysByTenantID(ctx context.Context, tenantID pgtype.UU
 
 const createApiKey = `-- name: CreateApiKey :one
 INSERT INTO
-	api_keys (tenant_id, name, hashed_key, scopes)
+        api_keys (tenant_id, name, hashed_key, scopes)
 VALUES
-	($1, $2, $3, $4)
+        ($1, $2, $3, $4)
 RETURNING
-	id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
 `
 
 type CreateApiKeyParams struct {
@@ -84,9 +84,9 @@ func (q *Queries) CreateApiKey(ctx context.Context, arg CreateApiKeyParams) (Api
 
 const deleteApiKey = `-- name: DeleteApiKey :exec
 DELETE FROM
-	api_keys
+        api_keys
 WHERE
-	id = $1
+        id = $1
 `
 
 func (q *Queries) DeleteApiKey(ctx context.Context, id pgtype.UUID) error {
@@ -96,9 +96,9 @@ func (q *Queries) DeleteApiKey(ctx context.Context, id pgtype.UUID) error {
 
 const deleteApiKeysByTenantID = `-- name: DeleteApiKeysByTenantID :exec
 DELETE FROM
-	api_keys
+        api_keys
 WHERE
-	tenant_id = $1
+        tenant_id = $1
 `
 
 func (q *Queries) DeleteApiKeysByTenantID(ctx context.Context, tenantID pgtype.UUID) error {
@@ -108,11 +108,11 @@ func (q *Queries) DeleteApiKeysByTenantID(ctx context.Context, tenantID pgtype.U
 
 const getApiKeyByHashedKey = `-- name: GetApiKeyByHashedKey :one
 SELECT
-	id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
 FROM
-	api_keys
+        api_keys
 WHERE
-	hashed_key = $1
+        hashed_key = $1
 `
 
 func (q *Queries) GetApiKeyByHashedKey(ctx context.Context, hashedKey string) (ApiKey, error) {
@@ -134,11 +134,11 @@ func (q *Queries) GetApiKeyByHashedKey(ctx context.Context, hashedKey string) (A
 
 const getApiKeyByID = `-- name: GetApiKeyByID :one
 SELECT
-	id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
 FROM
-	api_keys
+        api_keys
 WHERE
-	id = $1
+        id = $1
 `
 
 func (q *Queries) GetApiKeyByID(ctx context.Context, id pgtype.UUID) (ApiKey, error) {
@@ -160,15 +160,15 @@ func (q *Queries) GetApiKeyByID(ctx context.Context, id pgtype.UUID) (ApiKey, er
 
 const listActiveApiKeysByTenantID = `-- name: ListActiveApiKeysByTenantID :many
 SELECT
-	id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
 FROM
-	api_keys
+        api_keys
 WHERE
-	tenant_id = $1
-	AND (expires_at IS NULL OR expires_at > NOW())
+        tenant_id = $1
+        AND (expires_at IS NULL OR expires_at > NOW())
 ORDER BY
-	created_at DESC,
-	id DESC
+        created_at DESC,
+        id DESC
 `
 
 func (q *Queries) ListActiveApiKeysByTenantID(ctx context.Context, tenantID pgtype.UUID) ([]ApiKey, error) {
@@ -203,14 +203,14 @@ func (q *Queries) ListActiveApiKeysByTenantID(ctx context.Context, tenantID pgty
 
 const listApiKeysByTenantID = `-- name: ListApiKeysByTenantID :many
 SELECT
-	id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
 FROM
-	api_keys
+        api_keys
 WHERE
-	tenant_id = $1
+        tenant_id = $1
 ORDER BY
-	created_at DESC,
-	id DESC
+        created_at DESC,
+        id DESC
 `
 
 func (q *Queries) ListApiKeysByTenantID(ctx context.Context, tenantID pgtype.UUID) ([]ApiKey, error) {
@@ -245,14 +245,14 @@ func (q *Queries) ListApiKeysByTenantID(ctx context.Context, tenantID pgtype.UUI
 
 const listExpiredApiKeys = `-- name: ListExpiredApiKeys :many
 SELECT
-	id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
 FROM
-	api_keys
+        api_keys
 WHERE
-	expires_at IS NOT NULL
-	AND expires_at <= NOW()
+        expires_at IS NOT NULL
+        AND expires_at <= NOW()
 ORDER BY
-	expires_at DESC
+        expires_at DESC
 `
 
 func (q *Queries) ListExpiredApiKeys(ctx context.Context) ([]ApiKey, error) {
@@ -287,14 +287,14 @@ func (q *Queries) ListExpiredApiKeys(ctx context.Context) ([]ApiKey, error) {
 
 const listStaleApiKeys = `-- name: ListStaleApiKeys :many
 SELECT
-	id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
 FROM
-	api_keys
+        api_keys
 WHERE
-	(last_used_at IS NULL OR last_used_at < NOW() - INTERVAL '30 days')
-	AND (expires_at IS NULL OR expires_at > NOW())
+        (last_used_at IS NULL OR last_used_at < NOW() - INTERVAL '30 days')
+        AND (expires_at IS NULL OR expires_at > NOW())
 ORDER BY
-	last_used_at ASC NULLS FIRST
+        last_used_at ASC NULLS FIRST
 `
 
 func (q *Queries) ListStaleApiKeys(ctx context.Context) ([]ApiKey, error) {
@@ -329,13 +329,13 @@ func (q *Queries) ListStaleApiKeys(ctx context.Context) ([]ApiKey, error) {
 
 const setApiKeyExpiration = `-- name: SetApiKeyExpiration :one
 UPDATE
-	api_keys
+        api_keys
 SET
-	expires_at = $1
+        expires_at = $1
 WHERE
-	id = $2
+        id = $2
 RETURNING
-	id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
 `
 
 type SetApiKeyExpirationParams struct {
@@ -362,13 +362,13 @@ func (q *Queries) SetApiKeyExpiration(ctx context.Context, arg SetApiKeyExpirati
 
 const updateApiKeyName = `-- name: UpdateApiKeyName :one
 UPDATE
-	api_keys
+        api_keys
 SET
-	name = $1
+        name = $1
 WHERE
-	id = $2
+        id = $2
 RETURNING
-	id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
 `
 
 type UpdateApiKeyNameParams struct {
@@ -395,13 +395,13 @@ func (q *Queries) UpdateApiKeyName(ctx context.Context, arg UpdateApiKeyNamePara
 
 const updateApiKeyScopes = `-- name: UpdateApiKeyScopes :one
 UPDATE
-	api_keys
+        api_keys
 SET
-	scopes = $1
+        scopes = $1
 WHERE
-	id = $2
+        id = $2
 RETURNING
-	id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
 `
 
 type UpdateApiKeyScopesParams struct {
@@ -428,12 +428,12 @@ func (q *Queries) UpdateApiKeyScopes(ctx context.Context, arg UpdateApiKeyScopes
 
 const updateLastUsedAtIfStale = `-- name: UpdateLastUsedAtIfStale :exec
 UPDATE
-	api_keys
+        api_keys
 SET
-	last_used_at = NOW()
+        last_used_at = NOW()
 WHERE
-	id = $1
-	AND (last_used_at IS NULL OR last_used_at < NOW() - INTERVAL '5 minutes')
+        id = $1
+        AND (last_used_at IS NULL OR last_used_at < NOW() - INTERVAL '5 minutes')
 `
 
 func (q *Queries) UpdateLastUsedAtIfStale(ctx context.Context, id pgtype.UUID) error {

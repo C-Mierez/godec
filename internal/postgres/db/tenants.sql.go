@@ -13,9 +13,9 @@ import (
 
 const countTenants = `-- name: CountTenants :one
 SELECT
-	COUNT(*)
+        COUNT(*)
 FROM
-	tenants
+        tenants
 `
 
 func (q *Queries) CountTenants(ctx context.Context) (int64, error) {
@@ -27,11 +27,11 @@ func (q *Queries) CountTenants(ctx context.Context) (int64, error) {
 
 const countTenantsByStatus = `-- name: CountTenantsByStatus :one
 SELECT
-	COUNT(*)
+        COUNT(*)
 FROM
-	tenants
+        tenants
 WHERE
-	status = $1
+        status = $1
 `
 
 func (q *Queries) CountTenantsByStatus(ctx context.Context, status string) (int64, error) {
@@ -43,11 +43,11 @@ func (q *Queries) CountTenantsByStatus(ctx context.Context, status string) (int6
 
 const createTenant = `-- name: CreateTenant :one
 INSERT INTO
-	tenants (name, email)
+        tenants (name, email)
 VALUES
-	($1, $2)
+        ($1, $2)
 RETURNING
-	id, name, email, status, created_at, updated_at
+        id, name, email, status, created_at, updated_at
 `
 
 type CreateTenantParams struct {
@@ -71,12 +71,12 @@ func (q *Queries) CreateTenant(ctx context.Context, arg CreateTenantParams) (Ten
 
 const getActiveTenantByEmail = `-- name: GetActiveTenantByEmail :one
 SELECT
-	id, name, email, status, created_at, updated_at
+        id, name, email, status, created_at, updated_at
 FROM
-	tenants
+        tenants
 WHERE
-	email = $1
-	AND status = 'active'
+        email = $1
+        AND status = 'active'
 `
 
 func (q *Queries) GetActiveTenantByEmail(ctx context.Context, email string) (Tenant, error) {
@@ -95,11 +95,11 @@ func (q *Queries) GetActiveTenantByEmail(ctx context.Context, email string) (Ten
 
 const getTenantByID = `-- name: GetTenantByID :one
 SELECT
-	id, name, email, status, created_at, updated_at
+        id, name, email, status, created_at, updated_at
 FROM
-	tenants
+        tenants
 WHERE
-	id = $1
+        id = $1
 `
 
 func (q *Queries) GetTenantByID(ctx context.Context, id pgtype.UUID) (Tenant, error) {
@@ -118,16 +118,16 @@ func (q *Queries) GetTenantByID(ctx context.Context, id pgtype.UUID) (Tenant, er
 
 const listTenants = `-- name: ListTenants :many
 SELECT
-	id, name, email, status, created_at, updated_at
+        id, name, email, status, created_at, updated_at
 FROM
-	tenants
+        tenants
 ORDER BY
-	created_at DESC,
-	id DESC
+        created_at DESC,
+        id DESC
 LIMIT
-	$1
+        $1
 OFFSET
-	$2
+        $2
 `
 
 type ListTenantsParams struct {
@@ -164,14 +164,14 @@ func (q *Queries) ListTenants(ctx context.Context, arg ListTenantsParams) ([]Ten
 
 const listTenantsByEmail = `-- name: ListTenantsByEmail :many
 SELECT
-	id, name, email, status, created_at, updated_at
+        id, name, email, status, created_at, updated_at
 FROM
-	tenants
+        tenants
 WHERE
-	email = $1
+        email = $1
 ORDER BY
-	created_at DESC,
-	id DESC
+        created_at DESC,
+        id DESC
 `
 
 func (q *Queries) ListTenantsByEmail(ctx context.Context, email string) ([]Tenant, error) {
@@ -203,18 +203,18 @@ func (q *Queries) ListTenantsByEmail(ctx context.Context, email string) ([]Tenan
 
 const listTenantsByStatus = `-- name: ListTenantsByStatus :many
 SELECT
-	id, name, email, status, created_at, updated_at
+        id, name, email, status, created_at, updated_at
 FROM
-	tenants
+        tenants
 WHERE
-	status = $1
+        status = $1
 ORDER BY
-	created_at DESC,
-	id DESC
+        created_at DESC,
+        id DESC
 LIMIT
-	$2
+        $2
 OFFSET
-	$3
+        $3
 `
 
 type ListTenantsByStatusParams struct {
@@ -253,11 +253,11 @@ func (q *Queries) ListTenantsByStatus(ctx context.Context, arg ListTenantsByStat
 const setTenantStatus = `-- name: SetTenantStatus :one
 UPDATE tenants
 SET
-	status = $1
+        status = $1
 WHERE
-	id = $2
+        id = $2
 RETURNING
-	id, name, email, status, created_at, updated_at
+        id, name, email, status, created_at, updated_at
 `
 
 type SetTenantStatusParams struct {
@@ -282,12 +282,12 @@ func (q *Queries) SetTenantStatus(ctx context.Context, arg SetTenantStatusParams
 const updateTenant = `-- name: UpdateTenant :one
 UPDATE tenants
 SET
-	name = $1,
-	email = $2
+        name = $1,
+        email = $2
 WHERE
-	id = $3
+        id = $3
 RETURNING
-	id, name, email, status, created_at, updated_at
+        id, name, email, status, created_at, updated_at
 `
 
 type UpdateTenantParams struct {

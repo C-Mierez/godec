@@ -21,13 +21,14 @@ The environment schema lives in [internal/config/config.go](internal/config/conf
 
 Lefthook is used to keep `.env` and `.env.example` aligned with that source of truth through a pre-commit `envsync` task.
 
-# Prerequisites
+## Tooling
 
-## Install Lefthook
+Tool binaries are pinned in [tools/go.mod](tools/go.mod). You do not need to install `lefthook`, `sqlc`, or `goose` globally.
+
+### Install Git hooks
 
 ```bash
-go install github.com/evilmartians/lefthook@latest
-lefthook install
+make hooks-install
 ```
 
 ### Sync env files locally
@@ -53,18 +54,39 @@ go run ./ci/envsync/cmd check --file .env.example
 - `fix` reads [internal/config/config.go](internal/config/config.go) first, then creates or appends missing keys in `.env` and `.env.example`.
 - `check` only reports missing or stale keys. In GitHub Actions, pass `--file .env.example` because `.env` is intentionally local-only.
 
-## Install SQLC
+### Generate SQLC output
 
 ```bash
-go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+make sqlc
+```
+
+To verify the generated SQLC files are up to date, run:
+
+```bash
+make sqlc-check
+```
+
+### Generate the API server code
+
+```bash
+make api-codegen
+```
+
+To verify the generated API file is up to date, run:
+
+```bash
+make codegen-check
 ```
 
 ### Set up [`sqlc.yaml`](https://docs.sqlc.dev/en/latest/tutorials/getting-started-postgresql.html)
 
-## Install [goose](https://github.com/pressly/goose)
+### Goose migrations
 
 ```bash
-go install github.com/pressly/goose/v3/cmd/goose@latest
+make goose-new NAME=add_some_column
+make goose-up
+make goose-down
+make goose-status
 ```
 
 ### Set environment variables

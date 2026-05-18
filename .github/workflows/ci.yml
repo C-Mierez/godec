@@ -34,6 +34,12 @@ jobs:
             - name: Run tests
               run: go test ./...
 
+            - name: Check API code generation is current
+              run: make codegen-check
+
+            - name: Check SQLC generation is current
+              run: make sqlc-check
+
             - name: Check go.mod and go.sum are tidy
               run: |
                   go mod tidy
