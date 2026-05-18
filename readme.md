@@ -11,6 +11,10 @@ The objetive is to create a full-fledged group of microservices for handling upl
 - `godotenv` + `caarlos0's env`
 - [`validator`](https://github.com/go-playground/validator)
 
+## Architecture Walkthrough
+
+See [docs/architecture-walkthrough.md](docs/architecture-walkthrough.md) for the package-by-feature layout, runtime flow, and maintenance rules used by the new architecture.
+
 ## Environment Sync
 
 The environment schema lives in [internal/config/config.go](internal/config/config.go).
@@ -69,6 +73,6 @@ go install github.com/pressly/goose/v3/cmd/goose@latest
 # Example
 GOOSE_DRIVER=postgres
 GOOSE_DBSTRING=postgres://admin:admin@localhost:5432/admin_db
-GOOSE_MIGRATION_DIR=./migrations
+GOOSE_MIGRATION_DIR=./internal/postgres/migrations
 GOOSE_TABLE=custom.goose_migrations
 ```

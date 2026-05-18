@@ -6,8 +6,8 @@ SQLC := sqlc
 GOOSE := goose
 PG_DUMP := pg_dump
 
-MIGRATIONS_DIR := pkg/db/postgres/migrations
-SCHEMA_FILE := pkg/db/postgres/_gen/schema.sql
+MIGRATIONS_DIR := internal/postgres/migrations
+SCHEMA_FILE := internal/postgres/db/schema.sql
 
 
 .PHONY: help sqlc dump goose-new goose-up goose-down goose-status migrate
