@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -168,12 +169,18 @@ type SetTenantStatusJSONRequestBody = UpdateTenantStatusRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Get API documentation
+	// (GET /docs/api)
+	GetAPIDocs(ctx *echo.Context) error
 	// Liveness probe
 	// (GET /live)
 	Liveness(ctx *echo.Context) error
 	// Readiness probe
 	// (GET /ready)
 	Readiness(ctx *echo.Context) error
+	// Get OpenAPI specification .yaml file
+	// (GET /spec.yaml)
+	GetOpenAPISpec(ctx *echo.Context) error
 	// Generate a new API key
 	// (POST /v1/apikey/create_key)
 	CreateApiKey(ctx *echo.Context) error
@@ -199,6 +206,15 @@ type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 }
 
+// GetAPIDocs converts echo context to params.
+func (w *ServerInterfaceWrapper) GetAPIDocs(ctx *echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetAPIDocs(ctx)
+	return err
+}
+
 // Liveness converts echo context to params.
 func (w *ServerInterfaceWrapper) Liveness(ctx *echo.Context) error {
 	var err error
@@ -214,6 +230,15 @@ func (w *ServerInterfaceWrapper) Readiness(ctx *echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.Readiness(ctx)
+	return err
+}
+
+// GetOpenAPISpec converts echo context to params.
+func (w *ServerInterfaceWrapper) GetOpenAPISpec(ctx *echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetOpenAPISpec(ctx)
 	return err
 }
 
@@ -348,8 +373,10 @@ func RegisterHandlersWithOptions(router EchoRouter, si ServerInterface, options 
 		Handler: si,
 	}
 
+	router.GET(options.BaseURL+"/docs/api", wrapper.GetAPIDocs, options.OperationMiddlewares["getAPIDocs"]...)
 	router.GET(options.BaseURL+"/live", wrapper.Liveness, options.OperationMiddlewares["liveness"]...)
 	router.GET(options.BaseURL+"/ready", wrapper.Readiness, options.OperationMiddlewares["readiness"]...)
+	router.GET(options.BaseURL+"/spec.yaml", wrapper.GetOpenAPISpec, options.OperationMiddlewares["getOpenAPISpec"]...)
 	router.POST(options.BaseURL+"/v1/apikey/create_key", wrapper.CreateApiKey, options.OperationMiddlewares["createApiKey"]...)
 	router.POST(options.BaseURL+"/v1/media/upload-url", wrapper.GetMediaUploadURL, options.OperationMiddlewares["getMediaUploadURL"]...)
 	router.GET(options.BaseURL+"/v1/tenants", wrapper.ListTenants, options.OperationMiddlewares["listTenants"]...)
@@ -364,6 +391,33 @@ type BadRequestJSONResponse Error
 type InternalErrorJSONResponse Error
 
 type NotFoundJSONResponse Error
+
+type GetAPIDocsRequestObject struct {
+}
+
+type GetAPIDocsResponseObject interface {
+	VisitGetAPIDocsResponse(w http.ResponseWriter) error
+}
+
+type GetAPIDocs200TexthtmlResponse struct {
+	Body          io.Reader
+	ContentLength int64
+}
+
+func (response GetAPIDocs200TexthtmlResponse) VisitGetAPIDocsResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/html")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
 
 type LivenessRequestObject struct {
 }
@@ -404,6 +458,33 @@ func (response Readiness200JSONResponse) VisitReadinessResponse(w http.ResponseW
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOpenAPISpecRequestObject struct {
+}
+
+type GetOpenAPISpecResponseObject interface {
+	VisitGetOpenAPISpecResponse(w http.ResponseWriter) error
+}
+
+type GetOpenAPISpec200ApplicationyamlResponse struct {
+	Body          io.Reader
+	ContentLength int64
+}
+
+func (response GetOpenAPISpec200ApplicationyamlResponse) VisitGetOpenAPISpecResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "application/yaml")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
 	return err
 }
 
@@ -724,12 +805,18 @@ func (response SetTenantStatus500JSONResponse) VisitSetTenantStatusResponse(w ht
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// Get API documentation
+	// (GET /docs/api)
+	GetAPIDocs(ctx context.Context, request GetAPIDocsRequestObject) (GetAPIDocsResponseObject, error)
 	// Liveness probe
 	// (GET /live)
 	Liveness(ctx context.Context, request LivenessRequestObject) (LivenessResponseObject, error)
 	// Readiness probe
 	// (GET /ready)
 	Readiness(ctx context.Context, request ReadinessRequestObject) (ReadinessResponseObject, error)
+	// Get OpenAPI specification .yaml file
+	// (GET /spec.yaml)
+	GetOpenAPISpec(ctx context.Context, request GetOpenAPISpecRequestObject) (GetOpenAPISpecResponseObject, error)
 	// Generate a new API key
 	// (POST /v1/apikey/create_key)
 	CreateApiKey(ctx context.Context, request CreateApiKeyRequestObject) (CreateApiKeyResponseObject, error)
@@ -760,6 +847,29 @@ func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareF
 type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
+}
+
+// GetAPIDocs operation middleware
+func (sh *strictHandler) GetAPIDocs(ctx *echo.Context) error {
+	var request GetAPIDocsRequestObject
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAPIDocs(ctx.Request().Context(), request.(GetAPIDocsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAPIDocs")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetAPIDocsResponseObject); ok {
+		return validResponse.VisitGetAPIDocsResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
 }
 
 // Liveness operation middleware
@@ -802,6 +912,29 @@ func (sh *strictHandler) Readiness(ctx *echo.Context) error {
 		return err
 	} else if validResponse, ok := response.(ReadinessResponseObject); ok {
 		return validResponse.VisitReadinessResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetOpenAPISpec operation middleware
+func (sh *strictHandler) GetOpenAPISpec(ctx *echo.Context) error {
+	var request GetOpenAPISpecRequestObject
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetOpenAPISpec(ctx.Request().Context(), request.(GetOpenAPISpecRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetOpenAPISpec")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetOpenAPISpecResponseObject); ok {
+		return validResponse.VisitGetOpenAPISpecResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}

@@ -19,6 +19,13 @@ See [docs/architecture-walkthrough.md](docs/architecture-walkthrough.md) for the
 
 See [docs/api-codegen-walkthrough.md](docs/api-codegen-walkthrough.md) for a guide on the OpenAPI specification, oapi-codegen setup, and development flow for adding or modifying endpoints.
 
+## API Documentation
+
+When the server is running, you can access:
+
+- **Interactive API Docs**: http://localhost:8080/docs/api (Scalar UI)
+- **OpenAPI Specification**: http://localhost:8080/spec.yaml (YAML format)
+
 ## Environment Sync
 
 The environment schema lives in [internal/config/config.go](internal/config/config.go).

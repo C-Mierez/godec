@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://spec.openapis.org/oas/3.0/schema/2024-10-18
 openapi: "3.0.0"
 info:
     title: godec API
@@ -44,6 +45,36 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/HealthResponse"
+
+    # OpenAPI spec file
+    /spec.yaml:
+        get:
+            operationId: getOpenAPISpec
+            tags: [api-doc]
+            summary: Get OpenAPI specification .yaml file
+            description: Retrieve the OpenAPI specification for this API
+            responses:
+                "200":
+                    description: OpenAPI specification
+                    content:
+                        application/yaml:
+                            schema:
+                                type: object
+
+    # Scalar API Endpoints Doc
+    /docs/api:
+        get:
+            operationId: getAPIDocs
+            tags: [api-doc]
+            summary: Get API documentation
+            description: Retrieve human-readable API documentation
+            responses:
+                "200":
+                    description: HTML documentation
+                    content:
+                        text/html:
+                            schema:
+                                type: string
 
     # Tenant operations
     /v1/tenants:

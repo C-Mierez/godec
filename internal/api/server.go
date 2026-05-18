@@ -8,19 +8,31 @@ import (
 )
 
 type Server struct {
-	tenants *TenantHandlers
-	apikeys *APIKeyHandlers
-	health  *HealthHandlers
-	media   *MediaHandlers
+	tenants       *TenantHandlers
+	apikeys       *APIKeyHandlers
+	health        *HealthHandlers
+	media         *MediaHandlers
+	documentation *DocumentationHandlers
 }
 
 func NewServer(tenantService *tenant.Service, apiKeyService *apikey.Service) *Server {
 	return &Server{
-		tenants: NewTenantHandlers(tenantService),
-		apikeys: NewAPIKeyHandlers(apiKeyService),
-		health:  NewHealthHandlers(),
-		media:   NewMediaHandlers(),
+		tenants:       NewTenantHandlers(tenantService),
+		apikeys:       NewAPIKeyHandlers(apiKeyService),
+		health:        NewHealthHandlers(),
+		media:         NewMediaHandlers(),
+		documentation: NewDocumentationHandlers(),
 	}
+}
+
+// GetAPIDocs delegates to documentation handlers
+func (s *Server) GetOpenAPISpec(ctx context.Context, request GetOpenAPISpecRequestObject) (GetOpenAPISpecResponseObject, error) {
+	return s.documentation.GetOpenAPISpec(ctx, request)
+}
+
+// GetAPIDocs delegates to documentation handlers
+func (s *Server) GetAPIDocs(ctx context.Context, request GetAPIDocsRequestObject) (GetAPIDocsResponseObject, error) {
+	return s.documentation.GetAPIDocs(ctx, request)
 }
 
 // Liveness delegates to health handlers

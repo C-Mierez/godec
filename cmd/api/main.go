@@ -38,12 +38,36 @@ func main() {
 			tenantService := tenantpkg.NewService(tenantStore)
 
 			e := echo.New()
-			e.Use(middleware.RequestLogger(), middleware.Recover())
+			e.Use(middleware.RequestLogger(), middleware.Recover(), middleware.CORSWithConfig(middleware.CORSConfig{
+				AllowOrigins: []string{
+					"http://127.0.0.1:8080",
+					"http://localhost:8080",
+					// TODO - Actual production url
+				},
+				AllowMethods: []string{
+					"GET",
+					"POST",
+					"PATCH",
+					"DELETE",
+					"OPTIONS",
+				},
+				AllowHeaders: []string{
+					echo.HeaderAccept,
+					echo.HeaderAuthorization,
+					echo.HeaderContentType,
+					echo.HeaderOrigin,
+					echo.HeaderXRequestedWith,
+				},
+			}))
 
 			// Create API server and register handlers
 			apiServer := api.NewServer(tenantService, apiKeyService)
 			strictHandler := api.NewStrictHandler(apiServer, nil)
 			api.RegisterHandlers(e, strictHandler)
+
+			// Print startup information
+			log.Printf("godec API server starting on %s", cfg.Server.ServerAddress)
+			log.Printf("📖 API Documentation: http://%s/docs/api", cfg.Server.ServerAddress)
 
 			if err := e.Start(cfg.Server.ServerAddress); err != nil {
 				log.Printf("server error: %v", err)
