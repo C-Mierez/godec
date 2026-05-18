@@ -15,6 +15,10 @@ The objetive is to create a full-fledged group of microservices for handling upl
 
 See [docs/architecture-walkthrough.md](docs/architecture-walkthrough.md) for the package-by-feature layout, runtime flow, and maintenance rules used by the new architecture.
 
+## API Code Generation
+
+See [docs/api-codegen-walkthrough.md](docs/api-codegen-walkthrough.md) for a guide on the OpenAPI specification, oapi-codegen setup, and development flow for adding or modifying endpoints.
+
 ## Environment Sync
 
 The environment schema lives in [internal/config/config.go](internal/config/config.go).
