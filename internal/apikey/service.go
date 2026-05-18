@@ -33,12 +33,14 @@ func (s *Service) GenerateApiKey(ctx context.Context, tenantID uuid.UUID, name s
 	return plainKey, apiKey, nil
 }
 
-func (s *Service) ValidateApiKey(ctx context.Context, providedKey string) (bool, *ApiKey, error) {
-	apiKey, err := s.store.GetApiKeyByHashedKey(ctx, providedKey)
+func (s *Service) ValidateApiKey(ctx context.Context, plainKey string) (bool, *ApiKey, error) {
+	hashedKey := hashKey(plainKey)
+
+	apiKey, err := s.store.GetApiKeyByHashedKey(ctx, hashedKey)
 	if err != nil {
 		return false, nil, err
 	}
 
-	isValid := validateKey(providedKey, apiKey.HashedKey)
+	isValid := validateHashedKey(hashedKey, apiKey.HashedKey)
 	return isValid, apiKey, nil
 }
