@@ -241,10 +241,19 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/UploadURLResponse"
+                "401":
+                    $ref: "#/components/responses/Unauthorized"
+                "403":
+                    $ref: "#/components/responses/Forbidden"
                 "500":
                     $ref: "#/components/responses/InternalError"
 
 components:
+    securitySchemes:
+        ApiKeyAuth:
+            type: apiKey
+            in: header
+            name: X-API-Key
     schemas:
         # Domain models
         Tenant:
@@ -392,7 +401,31 @@ components:
                     type: string
                     description: Error message
 
+        AuthErrorResponse:
+            allOf:
+                - $ref: "#/components/schemas/Error"
+                - type: object
+                  required: [code]
+                  properties:
+                      code:
+                          type: string
+                          description: Machine-readable error code
+                          enum: [MISSING_API_KEY, INVALID_API_KEY, EXPIRED_API_KEY]
+                          example: INVALID_API_KEY
+
     responses:
+        Unauthorized:
+            description: Unauthorized - missing or invalid API key
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/AuthErrorResponse"
+        Forbidden:
+            description: Forbidden - the API key does not have permission
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/AuthErrorResponse"
         BadRequest:
             description: Bad request - invalid parameters or payload
             content:

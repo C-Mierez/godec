@@ -2,18 +2,21 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/c-mierez/godec/internal/api"
 	apikeypkg "github.com/c-mierez/godec/internal/apikey"
 	"github.com/c-mierez/godec/internal/config"
+	"github.com/c-mierez/godec/internal/middleware"
+	"github.com/c-mierez/godec/internal/middleware/echovalidator"
 	postgres "github.com/c-mierez/godec/internal/postgres"
 	db "github.com/c-mierez/godec/internal/postgres/db"
 	tenantpkg "github.com/c-mierez/godec/internal/tenant"
 	"github.com/c-mierez/godec/pkg/graceful"
+	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v5"
-	"github.com/labstack/echo/v5/middleware"
 )
 
 func main() {
@@ -38,27 +41,47 @@ func main() {
 			tenantService := tenantpkg.NewService(tenantStore)
 
 			e := echo.New()
-			e.Use(middleware.RequestLogger(), middleware.Recover(), middleware.CORSWithConfig(middleware.CORSConfig{
-				AllowOrigins: []string{
-					"http://127.0.0.1:8080",
-					"http://localhost:8080",
-					// TODO - Actual production url
+			e.Use(middleware.BuildGlobalMiddlewares()...)
+
+				// Centralized error handler: format AuthError into AuthErrorResponse
+			//
+			// Auth errors are handled here, NOT through the generated response types
+			// (GetMediaUploadURL401JSONResponse, GetMediaUploadURL403JSONResponse in gen.go).
+			// Those types are intentionally bypassed because oapi-codegen only generates
+			// typed response constructors per-operation, but the echovalidator middleware
+			// intercepts auth failures before they reach the operation handler. All auth
+			// errors flow through this centralized handler instead.
+			//
+			// If this pattern changes in the future (e.g. moving auth handling into each
+			// operation handler), consider using the generated response types to keep
+			// the spec and implementation in sync.
+			e.HTTPErrorHandler = func(c *echo.Context, err error) {
+				var ae *middleware.AuthError
+				if errors.As(err, &ae) {
+					c.JSON(ae.Status, map[string]string{"error": ae.Message, "code": ae.Code})
+					return
+				}
+				echo.DefaultHTTPErrorHandler(false)(c, err)
+			}
+
+			// Wire apikey service into strict middleware.
+			akValidator := middleware.NewAPIKeyValidator(apiKeyService)
+
+			swagger, err := api.GetSwagger()
+			if err != nil {
+				log.Printf("failed to load openapi spec: %v", err)
+				return
+			}
+
+			// Disable server host checks from the spec to avoid false negatives behind proxies.
+			swagger.Servers = nil
+
+			validatorOptions := &echovalidator.Options{
+				Options: openapi3filter.Options{
+					AuthenticationFunc: middleware.APIKeyAuthenticator(akValidator),
 				},
-				AllowMethods: []string{
-					"GET",
-					"POST",
-					"PATCH",
-					"DELETE",
-					"OPTIONS",
-				},
-				AllowHeaders: []string{
-					echo.HeaderAccept,
-					echo.HeaderAuthorization,
-					echo.HeaderContentType,
-					echo.HeaderOrigin,
-					echo.HeaderXRequestedWith,
-				},
-			}))
+			}
+			e.Use(echovalidator.OapiRequestValidatorWithOptions(swagger, validatorOptions))
 
 			// Create API server and register handlers
 			apiServer := api.NewServer(tenantService, apiKeyService)

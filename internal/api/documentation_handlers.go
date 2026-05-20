@@ -6,6 +6,7 @@ import (
 	_ "embed"
 
 	"github.com/c-mierez/godec/internal/apidoc"
+	"github.com/getkin/kin-openapi/openapi3"
 )
 
 type DocumentationHandlers struct{}
@@ -16,6 +17,10 @@ func NewDocumentationHandlers() *DocumentationHandlers {
 
 //go:embed spec.yaml
 var specYaml []byte
+
+func GetSwagger() (*openapi3.T, error) {
+	return openapi3.NewLoader().LoadFromData(specYaml)
+}
 
 func (h *DocumentationHandlers) GetOpenAPISpec(ctx context.Context, request GetOpenAPISpecRequestObject) (GetOpenAPISpecResponseObject, error) {
 	return GetOpenAPISpec200ApplicationyamlResponse{

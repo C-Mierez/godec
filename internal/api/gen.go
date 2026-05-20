@@ -17,6 +17,27 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for AuthErrorResponseCode.
+const (
+	EXPIREDAPIKEY AuthErrorResponseCode = "EXPIRED_API_KEY"
+	INVALIDAPIKEY AuthErrorResponseCode = "INVALID_API_KEY"
+	MISSINGAPIKEY AuthErrorResponseCode = "MISSING_API_KEY"
+)
+
+// Valid indicates whether the value is a known member of the AuthErrorResponseCode enum.
+func (e AuthErrorResponseCode) Valid() bool {
+	switch e {
+	case EXPIREDAPIKEY:
+		return true
+	case INVALIDAPIKEY:
+		return true
+	case MISSINGAPIKEY:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for TenantStatus.
 const (
 	Active   TenantStatus = "active"
@@ -34,6 +55,18 @@ func (e TenantStatus) Valid() bool {
 		return false
 	}
 }
+
+// AuthErrorResponse defines model for AuthErrorResponse.
+type AuthErrorResponse struct {
+	// Code Machine-readable error code
+	Code AuthErrorResponseCode `json:"code"`
+
+	// Error Error message
+	Error string `json:"error"`
+}
+
+// AuthErrorResponseCode Machine-readable error code
+type AuthErrorResponseCode string
 
 // CreateAPIKeyRequest defines model for CreateAPIKeyRequest.
 type CreateAPIKeyRequest struct {
@@ -137,11 +170,20 @@ type UploadURLResponse struct {
 // BadRequest defines model for BadRequest.
 type BadRequest = Error
 
+// Forbidden defines model for Forbidden.
+type Forbidden = AuthErrorResponse
+
 // InternalError defines model for InternalError.
 type InternalError = Error
 
 // NotFound defines model for NotFound.
 type NotFound = Error
+
+// Unauthorized defines model for Unauthorized.
+type Unauthorized = AuthErrorResponse
+
+// apiKeyAuthContextKey is the context key for ApiKeyAuth security scheme
+type apiKeyAuthContextKey string
 
 // GetMediaUploadURLJSONBody defines parameters for GetMediaUploadURL.
 type GetMediaUploadURLJSONBody = map[string]interface{}
@@ -388,9 +430,13 @@ func RegisterHandlersWithOptions(router EchoRouter, si ServerInterface, options 
 
 type BadRequestJSONResponse Error
 
+type ForbiddenJSONResponse AuthErrorResponse
+
 type InternalErrorJSONResponse Error
 
 type NotFoundJSONResponse Error
+
+type UnauthorizedJSONResponse AuthErrorResponse
 
 type GetAPIDocsRequestObject struct {
 }
@@ -556,6 +602,34 @@ func (response GetMediaUploadURL200JSONResponse) VisitGetMediaUploadURLResponse(
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMediaUploadURL401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetMediaUploadURL401JSONResponse) VisitGetMediaUploadURLResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMediaUploadURL403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetMediaUploadURL403JSONResponse) VisitGetMediaUploadURLResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
 	_, err := buf.WriteTo(w)
 	return err
 }
