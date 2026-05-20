@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"strings"
 
 	"github.com/c-mierez/godec/internal/api"
 	apikeypkg "github.com/c-mierez/godec/internal/apikey"
@@ -41,7 +42,8 @@ func main() {
 			tenantService := tenantpkg.NewService(tenantStore)
 
 			e := echo.New()
-			e.Use(middleware.BuildGlobalMiddlewares()...)
+			corsOrigins := strings.Split(cfg.Server.CORSAllowedOrigins, ",")
+			e.Use(middleware.BuildGlobalMiddlewares(corsOrigins)...)
 
 				// Centralized error handler: format AuthError into AuthErrorResponse
 			//

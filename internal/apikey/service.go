@@ -33,7 +33,7 @@ func (s *Service) GenerateApiKey(ctx context.Context, tenantID uuid.UUID, name s
 	return plainKey, apiKey, nil
 }
 
-func (s *Service) ValidateApiKey(ctx context.Context, plainKey string) (bool, *ApiKey, error) {
+func (s *Service) ValidateAPIKey(ctx context.Context, plainKey string) (bool, *ApiKey, error) {
 	hashedKey := hashKey(plainKey)
 
 	apiKey, err := s.store.GetApiKeyByHashedKey(ctx, hashedKey)

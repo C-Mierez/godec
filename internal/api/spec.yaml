@@ -228,6 +228,8 @@ paths:
             tags: [media]
             summary: Get media upload URL
             description: Generate a pre-signed URL for uploading media
+            security:
+                - ApiKeyAuth: []
             requestBody:
                 required: false
                 content:

@@ -8,8 +8,9 @@ import (
 )
 
 type ServerEnv struct {
-	ServerAddress string `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
-	Env           string `env:"ENV" envDefault:"development"`
+	ServerAddress      string `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
+	Env                string `env:"ENV" envDefault:"development"`
+	CORSAllowedOrigins string `env:"CORS_ALLOWED_ORIGINS" envDefault:"http://127.0.0.1:8080,http://localhost:8080"`
 }
 
 type DatabaseEnv struct {
