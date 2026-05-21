@@ -17,6 +17,10 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+const (
+	ApiKeyAuthScopes apiKeyAuthContextKey = "ApiKeyAuth.Scopes"
+)
+
 // Defines values for AuthErrorResponseCode.
 const (
 	EXPIREDAPIKEY AuthErrorResponseCode = "EXPIRED_API_KEY"
@@ -296,6 +300,8 @@ func (w *ServerInterfaceWrapper) CreateApiKey(ctx *echo.Context) error {
 // GetMediaUploadURL converts echo context to params.
 func (w *ServerInterfaceWrapper) GetMediaUploadURL(ctx *echo.Context) error {
 	var err error
+
+	ctx.Set(string(ApiKeyAuthScopes), []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetMediaUploadURL(ctx)
