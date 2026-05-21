@@ -45,7 +45,7 @@ func main() {
 			corsOrigins := strings.Split(cfg.Server.CORSAllowedOrigins, ",")
 			e.Use(middleware.BuildGlobalMiddlewares(corsOrigins)...)
 
-				// Centralized error handler: format AuthError into AuthErrorResponse
+			// Centralized error handler: format AuthError into AuthErrorResponse
 			//
 			// Auth errors are handled here, NOT through the generated response types
 			// (GetMediaUploadURL401JSONResponse, GetMediaUploadURL403JSONResponse in gen.go).
@@ -58,6 +58,13 @@ func main() {
 			// operation handler), consider using the generated response types to keep
 			// the spec and implementation in sync.
 			e.HTTPErrorHandler = func(c *echo.Context, err error) {
+				// Prevent double-write when RequestLogger with HandleError=true calls
+				// this handler preemptively and then Echo's serveHTTP calls it again.
+				// See Echo v5 middleware/request_logger.go:381-388
+				if r, _ := echo.UnwrapResponse(c.Response()); r != nil && r.Committed {
+					return
+				}
+
 				var ae *middleware.AuthError
 				if errors.As(err, &ae) {
 					c.JSON(ae.Status, map[string]string{"error": ae.Message, "code": ae.Code})
