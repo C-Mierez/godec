@@ -18,9 +18,9 @@ type AuthError struct {
 func (e *AuthError) Error() string { return e.Message }
 
 const (
-	MissingAPIKey  = "MISSING_API_KEY"
-	InvalidAPIKey  = "INVALID_API_KEY"
-	ExpiredAPIKey  = "EXPIRED_API_KEY"
+	MissingAPIKey = "MISSING_API_KEY"
+	InvalidAPIKey = "INVALID_API_KEY"
+	ExpiredAPIKey = "EXPIRED_API_KEY"
 )
 
 func NewMissingKeyError() *AuthError {
