@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/c-mierez/godec/internal/envsync"
+	envsync "github.com/c-mierez/godec/ci/envsync/internal"
 )
 
 type multiValue []string

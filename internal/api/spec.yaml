@@ -1,0 +1,460 @@
+# yaml-language-server: $schema=https://spec.openapis.org/oas/3.0/schema/2024-10-18
+openapi: "3.0.0"
+info:
+    title: godec API
+    version: 1.0.0
+    description: API for managing encryption domains and API keys
+    contact:
+        name: C-Mierez
+    license:
+        name: Apache 2.0
+        url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+    - url: http://localhost:8080
+      description: Development server
+    - url: https://api.godec.example.com
+      description: Production server
+
+paths:
+    # Health checks
+    /live:
+        get:
+            operationId: liveness
+            tags: [health]
+            summary: Liveness probe
+            description: Returns 200 if the service is running
+            responses:
+                "200":
+                    description: Service is alive
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HealthResponse"
+
+    /ready:
+        get:
+            operationId: readiness
+            tags: [health]
+            summary: Readiness probe
+            description: Returns 200 if the service is ready to accept requests
+            responses:
+                "200":
+                    description: Service is ready
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HealthResponse"
+
+    # OpenAPI spec file
+    /spec.yaml:
+        get:
+            operationId: getOpenAPISpec
+            tags: [api-doc]
+            summary: Get OpenAPI specification .yaml file
+            description: Retrieve the OpenAPI specification for this API
+            responses:
+                "200":
+                    description: OpenAPI specification
+                    content:
+                        application/yaml:
+                            schema:
+                                type: object
+
+    # Scalar API Endpoints Doc
+    /docs/api:
+        get:
+            operationId: getAPIDocs
+            tags: [api-doc]
+            summary: Get API documentation
+            description: Retrieve human-readable API documentation
+            responses:
+                "200":
+                    description: HTML documentation
+                    content:
+                        text/html:
+                            schema:
+                                type: string
+
+    # Tenant operations
+    /v1/tenants:
+        post:
+            operationId: createTenant
+            tags: [tenants]
+            summary: Create a new tenant
+            description: Create a new tenant in the system
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/CreateTenantRequest"
+            responses:
+                "201":
+                    description: Tenant created successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Tenant"
+                "400":
+                    $ref: "#/components/responses/BadRequest"
+                "500":
+                    $ref: "#/components/responses/InternalError"
+
+        get:
+            operationId: listTenants
+            tags: [tenants]
+            summary: List all tenants
+            description: Get a paginated list of all tenants
+            parameters:
+                - name: limit
+                  in: query
+                  description: Maximum number of results
+                  schema:
+                      type: integer
+                      default: 20
+                      minimum: 1
+                      maximum: 100
+                - name: offset
+                  in: query
+                  description: Number of results to skip
+                  schema:
+                      type: integer
+                      default: 0
+                      minimum: 0
+            responses:
+                "200":
+                    description: List of tenants
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/TenantListResponse"
+                "400":
+                    $ref: "#/components/responses/BadRequest"
+                "500":
+                    $ref: "#/components/responses/InternalError"
+
+    /v1/tenants/{id}:
+        get:
+            operationId: getTenant
+            tags: [tenants]
+            summary: Get tenant by ID
+            description: Retrieve a specific tenant by its UUID
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  description: Tenant UUID
+                  schema:
+                      type: string
+                      format: uuid
+            responses:
+                "200":
+                    description: Tenant details
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Tenant"
+                "400":
+                    $ref: "#/components/responses/BadRequest"
+                "404":
+                    $ref: "#/components/responses/NotFound"
+                "500":
+                    $ref: "#/components/responses/InternalError"
+
+    /v1/tenants/{id}/status:
+        patch:
+            operationId: setTenantStatus
+            tags: [tenants]
+            summary: Update tenant status
+            description: Change the status of a tenant (active/inactive)
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  description: Tenant UUID
+                  schema:
+                      type: string
+                      format: uuid
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/UpdateTenantStatusRequest"
+            responses:
+                "200":
+                    description: Tenant status updated
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Tenant"
+                "400":
+                    $ref: "#/components/responses/BadRequest"
+                "404":
+                    $ref: "#/components/responses/NotFound"
+                "500":
+                    $ref: "#/components/responses/InternalError"
+
+    # API Key operations
+    /v1/apikey/create_key:
+        post:
+            operationId: createApiKey
+            tags: [apikeys]
+            summary: Generate a new API key
+            description: Create a new API key for a tenant
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/CreateAPIKeyRequest"
+            responses:
+                "201":
+                    description: API key created successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/CreateAPIKeyResponse"
+                "400":
+                    $ref: "#/components/responses/BadRequest"
+                "500":
+                    $ref: "#/components/responses/InternalError"
+
+    # Media operations
+    /v1/media/upload-url:
+        post:
+            operationId: getMediaUploadURL
+            tags: [media]
+            summary: Get media upload URL
+            description: Generate a pre-signed URL for uploading media
+            security:
+                - ApiKeyAuth: []
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            type: object
+            responses:
+                "200":
+                    description: Upload URL generated
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/UploadURLResponse"
+                "401":
+                    $ref: "#/components/responses/Unauthorized"
+                "403":
+                    $ref: "#/components/responses/Forbidden"
+                "500":
+                    $ref: "#/components/responses/InternalError"
+
+components:
+    securitySchemes:
+        ApiKeyAuth:
+            type: apiKey
+            in: header
+            name: X-API-Key
+    schemas:
+        # Domain models
+        Tenant:
+            type: object
+            required: [id, name, email, status, created_at, updated_at]
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                    description: Unique identifier for the tenant
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+                name:
+                    type: string
+                    description: Tenant name
+                    example: "Acme Corporation"
+                email:
+                    type: string
+                    format: email
+                    description: Tenant contact email
+                    example: "admin@acme.com"
+                status:
+                    $ref: "#/components/schemas/TenantStatus"
+                created_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp when tenant was created
+                updated_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp of last update
+
+        TenantStatus:
+            type: string
+            enum: [active, inactive]
+            description: Tenant status
+            example: active
+
+        TenantListResponse:
+            type: object
+            required: [items]
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Tenant"
+                    description: List of tenants
+
+        CreateTenantRequest:
+            type: object
+            required: [name, email]
+            properties:
+                name:
+                    type: string
+                    description: Name of the new tenant
+                    example: "Acme Corporation"
+                email:
+                    type: string
+                    format: email
+                    description: Contact email for the tenant
+                    example: "admin@acme.com"
+
+        UpdateTenantStatusRequest:
+            type: object
+            required: [status]
+            properties:
+                status:
+                    $ref: "#/components/schemas/TenantStatus"
+
+        CreateAPIKeyRequest:
+            type: object
+            required: [tenant_id, name]
+            properties:
+                tenant_id:
+                    type: string
+                    format: uuid
+                    description: Tenant UUID that owns this API key
+                name:
+                    type: string
+                    description: Human-readable name for the API key
+                    example: "Production Backend"
+                scopes:
+                    type: array
+                    items:
+                        type: string
+                    description: List of scopes/permissions for this key
+                    example: ["read:domains", "write:keys"]
+
+        CreateAPIKeyResponse:
+            type: object
+            required: [api_key, id, tenant_id, name]
+            properties:
+                api_key:
+                    type: string
+                    description: The actual API key (shown once, must be stored by user)
+                    example: "gdk_xxx..."
+                id:
+                    type: string
+                    format: uuid
+                    description: UUID of the API key record
+                tenant_id:
+                    type: string
+                    format: uuid
+                    description: Tenant UUID that owns this key
+                name:
+                    type: string
+                    description: Name of the API key
+                scopes:
+                    type: array
+                    items:
+                        type: string
+                    description: List of scopes for this key
+
+        HealthResponse:
+            type: object
+            required: [status, timestamp]
+            properties:
+                status:
+                    type: string
+                    description: Health status
+                    example: "ok"
+                timestamp:
+                    type: string
+                    description: Timestamp of the check
+                checks:
+                    type: object
+                    additionalProperties:
+                        type: string
+                    description: Additional health checks
+
+        UploadURLResponse:
+            type: object
+            required: [uploadURL]
+            properties:
+                uploadURL:
+                    type: string
+                    format: uri
+                    description: Pre-signed URL for uploading media
+                    example: "https://storage.example.com/upload/..."
+
+        Error:
+            type: object
+            required: [error]
+            properties:
+                error:
+                    type: string
+                    description: Error message
+
+        AuthErrorResponse:
+            allOf:
+                - $ref: "#/components/schemas/Error"
+                - type: object
+                  required: [code]
+                  properties:
+                      code:
+                          type: string
+                          description: Machine-readable error code
+                          enum: [MISSING_API_KEY, INVALID_API_KEY, EXPIRED_API_KEY]
+                          example: INVALID_API_KEY
+
+    responses:
+        Unauthorized:
+            description: Unauthorized - missing or invalid API key
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/AuthErrorResponse"
+        Forbidden:
+            description: Forbidden - the API key does not have permission
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/AuthErrorResponse"
+        BadRequest:
+            description: Bad request - invalid parameters or payload
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/Error"
+
+        NotFound:
+            description: Resource not found
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/Error"
+
+        InternalError:
+            description: Internal server error
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/Error"
+
+tags:
+    - name: health
+      description: Health check endpoints
+    - name: tenants
+      description: Tenant management operations
+    - name: apikeys
+      description: API key management operations
+    - name: media
+      description: Media operations

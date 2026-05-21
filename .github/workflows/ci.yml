@@ -1,57 +1,63 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
-      - mvp
-  pull_request:
+    push:
+        branches:
+            - main
+            - mvp
+    pull_request:
 
 jobs:
-  test:
-    name: Go Test
-    runs-on: ubuntu-latest
+    test:
+        name: Go Test
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
+            - name: Set up Go
+              uses: actions/setup-go@v5
+              with:
+                  go-version-file: go.mod
+                  cache: true
 
-      - name: Check Go formatting
-        run: |
-          files=$(find . -name '*.go' -not -path './.git/*')
-          if [ -n "$(gofmt -l $files)" ]; then
-            echo "Go files are not formatted"
-            gofmt -l $files
-            exit 1
-          fi
+            - name: Check Go formatting
+              run: |
+                  files=$(find . -name '*.go' -not -path './.git/*')
+                  if [ -n "$(gofmt -l $files)" ]; then
+                    echo "Go files are not formatted"
+                    gofmt -l $files
+                    exit 1
+                  fi
 
-      - name: Run tests
-        run: go test ./...
+            - name: Run tests
+              run: go test ./...
 
-      - name: Check go.mod and go.sum are tidy
-        run: |
-          go mod tidy
-          git diff --exit-code -- go.mod go.sum
+            - name: Check API code generation is current
+              run: make codegen-check
 
-  envsync:
-    name: Env Sync Check
-    runs-on: ubuntu-latest
+            - name: Check SQLC generation is current
+              run: make sqlc-check
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+            - name: Check go.mod and go.sum are tidy
+              run: |
+                  go mod tidy
+                  git diff --exit-code -- go.mod go.sum
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
+    envsync:
+        name: Env Sync Check
+        runs-on: ubuntu-latest
 
-      - name: Validate env example
-        run: go run ./cmd/envsync check --file .env.example
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Set up Go
+              uses: actions/setup-go@v5
+              with:
+                  go-version-file: go.mod
+                  cache: true
+
+            - name: Validate env example
+              run: go run ./ci/envsync/cmd check --file .env.example

@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/HEAD/configuration-schema.json
+package: api
+output: ../internal/api/gen.go
+generate:
+    echo5-server: true
+    strict-server: true
+    models: true
+output-options:
+    skip-prune: true
+# package-options removed to keep generator config compatible
