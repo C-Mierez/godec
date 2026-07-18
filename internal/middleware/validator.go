@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/c-mierez/godec/internal/apikey"
@@ -26,7 +25,6 @@ func NewAPIKeyValidator(svc *apikey.Service) APIKeyValidator {
 func (a *apiKeyValidatorImpl) ValidateAPIKey(ctx context.Context, key string) (*apikey.ApiKey, error) {
 	isValid, ak, err := a.svc.ValidateAPIKey(ctx, key)
 	if err != nil {
-		log.Printf("apikey validation failed: %v", err)
 		return nil, NewInvalidKeyError()
 	}
 

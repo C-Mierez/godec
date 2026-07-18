@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -37,7 +37,7 @@ type Options struct {
 
 func OapiRequestValidatorWithOptions(swagger *openapi3.T, options *Options) echo.MiddlewareFunc {
 	if swagger.Servers != nil && (options == nil || !options.SilenceServersWarning) {
-		log.Println("WARN: OapiRequestValidatorWithOptions called with an OpenAPI spec that has Servers set. This can cause unexpected host validation failures.")
+		slog.Warn("OapiRequestValidatorWithOptions called with an OpenAPI spec that has Servers set. This can cause unexpected host validation failures.")
 	}
 
 	router, err := legacyrouter.NewRouter(swagger)

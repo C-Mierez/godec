@@ -154,6 +154,9 @@ type Tenant struct {
 type TenantListResponse struct {
 	// Items List of tenants
 	Items []Tenant `json:"items"`
+
+	// Total Total number of tenants matching the query
+	Total int64 `json:"total"`
 }
 
 // TenantStatus Tenant status

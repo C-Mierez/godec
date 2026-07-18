@@ -47,6 +47,11 @@ func (h *TenantHandlers) ListTenants(ctx context.Context, request ListTenantsReq
 		return ListTenants400JSONResponse{BadRequestJSONResponse{Error: err.Error()}}, nil
 	}
 
+	total, err := h.service.CountTenants(ctx)
+	if err != nil {
+		return ListTenants400JSONResponse{BadRequestJSONResponse{Error: err.Error()}}, nil
+	}
+
 	apiTenants := make([]Tenant, len(tenants))
 	for i, t := range tenants {
 		apiTenants[i] = h.domainTenantToAPI(t)
@@ -54,6 +59,7 @@ func (h *TenantHandlers) ListTenants(ctx context.Context, request ListTenantsReq
 
 	return ListTenants200JSONResponse(TenantListResponse{
 		Items: apiTenants,
+		Total: total,
 	}), nil
 }
 

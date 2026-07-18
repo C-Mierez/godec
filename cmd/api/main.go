@@ -3,18 +3,21 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/c-mierez/godec/internal/api"
 	apikeypkg "github.com/c-mierez/godec/internal/apikey"
 	"github.com/c-mierez/godec/internal/config"
+	"github.com/c-mierez/godec/internal/logging"
 	"github.com/c-mierez/godec/internal/middleware"
 	"github.com/c-mierez/godec/internal/middleware/echovalidator"
 	postgres "github.com/c-mierez/godec/internal/postgres"
 	db "github.com/c-mierez/godec/internal/postgres/db"
 	tenantpkg "github.com/c-mierez/godec/internal/tenant"
-	"github.com/c-mierez/godec/pkg/graceful"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v5"
@@ -23,90 +26,95 @@ import (
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("failed to load configuration: %v", err)
+		slog.Error("failed to load configuration", "error", err)
+		panic(err)
 	}
 
-	graceful.RunWithGracefulShutdown(
-		func(executionContext context.Context) {
-			pool, err := pgxpool.New(executionContext, cfg.Database.URL)
-			if err != nil {
-				log.Printf("failed to create db pool: %v", err)
-				return
-			}
-			defer pool.Close()
+	logging.Setup(cfg.Server.Env)
 
-			queries := db.New(pool)
-			apiKeyStore := postgres.NewApiKeyStore(queries)
-			tenantStore := postgres.NewTenantStore(queries)
-			apiKeyService := apikeypkg.NewService(apiKeyStore)
-			tenantService := tenantpkg.NewService(tenantStore)
+	serverCtx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
-			e := echo.New()
-			corsOrigins := strings.Split(cfg.Server.CORSAllowedOrigins, ",")
-			e.Use(middleware.BuildGlobalMiddlewares(corsOrigins)...)
+	pool, err := pgxpool.New(context.Background(), cfg.Database.URL)
+	if err != nil {
+		slog.Error("failed to create db pool", "error", err)
+		return
+	}
+	defer pool.Close()
 
-			// Centralized error handler: format AuthError into AuthErrorResponse
-			//
-			// Auth errors are handled here, NOT through the generated response types
-			// (GetMediaUploadURL401JSONResponse, GetMediaUploadURL403JSONResponse in gen.go).
-			// Those types are intentionally bypassed because oapi-codegen only generates
-			// typed response constructors per-operation, but the echovalidator middleware
-			// intercepts auth failures before they reach the operation handler. All auth
-			// errors flow through this centralized handler instead.
-			//
-			// If this pattern changes in the future (e.g. moving auth handling into each
-			// operation handler), consider using the generated response types to keep
-			// the spec and implementation in sync.
-			e.HTTPErrorHandler = func(c *echo.Context, err error) {
-				// Prevent double-write when RequestLogger with HandleError=true calls
-				// this handler preemptively and then Echo's serveHTTP calls it again.
-				// See Echo v5 middleware/request_logger.go:381-388
-				if r, _ := echo.UnwrapResponse(c.Response()); r != nil && r.Committed {
-					return
-				}
+	queries := db.New(pool)
+	apiKeyStore := postgres.NewApiKeyStore(queries)
+	tenantStore := postgres.NewTenantStore(queries)
+	apiKeyService := apikeypkg.NewService(apiKeyStore)
+	tenantService := tenantpkg.NewService(tenantStore)
 
-				var ae *middleware.AuthError
-				if errors.As(err, &ae) {
-					c.JSON(ae.Status, map[string]string{"error": ae.Message, "code": ae.Code})
-					return
-				}
-				echo.DefaultHTTPErrorHandler(false)(c, err)
-			}
+	e := echo.New()
+	corsOrigins := strings.Split(cfg.Server.CORSAllowedOrigins, ",")
+	e.Use(middleware.BuildGlobalMiddlewares(corsOrigins)...)
 
-			// Wire apikey service into strict middleware.
-			akValidator := middleware.NewAPIKeyValidator(apiKeyService)
+	// Centralized error handler: format AuthError into AuthErrorResponse
+	//
+	// Auth errors are handled here, NOT through the generated response types
+	// (GetMediaUploadURL401JSONResponse, GetMediaUploadURL403JSONResponse in gen.go).
+	// Those types are intentionally bypassed because oapi-codegen only generates
+	// typed response constructors per-operation, but the echovalidator middleware
+	// intercepts auth failures before they reach the operation handler. All auth
+	// errors flow through this centralized handler instead.
+	//
+	// If this pattern changes in the future (e.g. moving auth handling into each
+	// operation handler), consider using the generated response types to keep
+	// the spec and implementation in sync.
+	e.HTTPErrorHandler = func(c *echo.Context, err error) {
+		// Prevent double-write when RequestLogger with HandleError=true calls
+		// this handler preemptively and then Echo's serveHTTP calls it again.
+		// See Echo v5 middleware/request_logger.go:381-388
+		if r, _ := echo.UnwrapResponse(c.Response()); r != nil && r.Committed {
+			return
+		}
 
-			swagger, err := api.GetSwagger()
-			if err != nil {
-				log.Printf("failed to load openapi spec: %v", err)
-				return
-			}
+		var ae *middleware.AuthError
+		if errors.As(err, &ae) {
+			c.JSON(ae.Status, map[string]string{"error": ae.Message, "code": ae.Code})
+			return
+		}
+		echo.DefaultHTTPErrorHandler(false)(c, err)
+	}
 
-			// Disable server host checks from the spec to avoid false negatives behind proxies.
-			swagger.Servers = nil
+	// Wire apikey service into strict middleware.
+	akValidator := middleware.NewAPIKeyValidator(apiKeyService)
 
-			validatorOptions := &echovalidator.Options{
-				Options: openapi3filter.Options{
-					AuthenticationFunc: middleware.APIKeyAuthenticator(akValidator),
-				},
-			}
-			e.Use(echovalidator.OapiRequestValidatorWithOptions(swagger, validatorOptions))
+	swagger, err := api.GetSwagger()
+	if err != nil {
+		slog.Error("failed to load openapi spec", "error", err)
+		return
+	}
 
-			// Create API server and register handlers
-			apiServer := api.NewServer(tenantService, apiKeyService)
-			strictHandler := api.NewStrictHandler(apiServer, nil)
-			api.RegisterHandlers(e, strictHandler)
+	// Disable server host checks from the spec to avoid false negatives behind proxies.
+	swagger.Servers = nil
 
-			// Print startup information
-			log.Printf("godec API server starting on %s", cfg.Server.ServerAddress)
-			log.Printf("📖 API Documentation: http://%s/docs/api", cfg.Server.ServerAddress)
-
-			if err := e.Start(cfg.Server.ServerAddress); err != nil {
-				log.Printf("server error: %v", err)
-			}
+	validatorOptions := &echovalidator.Options{
+		Options: openapi3filter.Options{
+			AuthenticationFunc: middleware.APIKeyAuthenticator(akValidator),
 		},
-		func() {
-			log.Println("initiating graceful shutdown...")
-		},
-	)
+	}
+	e.Use(echovalidator.OapiRequestValidatorWithOptions(swagger, validatorOptions))
+
+	// Create API server and register handlers
+	apiServer := api.NewServer(tenantService, apiKeyService)
+	strictHandler := api.NewStrictHandler(apiServer, nil)
+	api.RegisterHandlers(e, strictHandler)
+
+	// Print startup information
+	slog.Info("server starting", "address", cfg.Server.ServerAddress)
+	slog.Info("api documentation available", "url", "http://"+cfg.Server.ServerAddress+"/docs/api")
+
+	sc := echo.StartConfig{
+		Address:         cfg.Server.ServerAddress,
+		GracefulTimeout: 10 * time.Second,
+	}
+
+	if err := sc.Start(serverCtx, e); err != nil {
+		slog.Error("server error", "error", err)
+	}
+
 }

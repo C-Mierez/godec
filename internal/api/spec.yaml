@@ -295,13 +295,18 @@ components:
 
         TenantListResponse:
             type: object
-            required: [items]
+            required: [items, total]
             properties:
                 items:
                     type: array
                     items:
                         $ref: "#/components/schemas/Tenant"
                     description: List of tenants
+                total:
+                    type: integer
+                    format: int64
+                    description: Total number of tenants matching the query
+                    example: 42
 
         CreateTenantRequest:
             type: object

@@ -1,0 +1,81 @@
+schema: spec-driven
+
+context: |
+  Tech: Go 1.26.2, Echo v5, pgx v5 (sqlc), goose, oapi-codegen strict-server.
+  Architecture: modular monolith (package-by-feature under internal/); single composition root at cmd/api/main.go.
+  Persistence: PostgreSQL on Neon. SQLC types stay in internal/postgres/; domain packages see only consumer-defined interfaces.
+  Testing: go test, 4 test files (12+ test functions); no integration or e2e layers; no linter.
+  Tooling: gofmt, lefthook, envsync CLI. Tools pinned in tools/go.mod.
+  Entry point: HTTP API server (cmd/api/main.go).
+
+strict_tdd: true
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then format for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase
+    - Use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    - Follow existing code patterns
+    tdd: true
+    test_command: go test ./...
+  verify:
+    test_command: go test ./...
+    build_command: go build ./...
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
+
+testing:
+  strict_tdd: true
+  detected: 2026-07-18
+
+  runner:
+    command: go test ./...
+    framework: Go standard testing
+
+  layers:
+    unit:
+      available: true
+      tool: go test
+    integration:
+      available: false
+      tool: ""
+    e2e:
+      available: false
+      tool: ""
+
+  coverage:
+    available: true
+    command: go test -cover ./...
+    threshold: 0
+
+  quality_tools:
+    linter:
+      available: false
+      command: ""
+    type_checker:
+      available: true
+      command: go build ./...
+    formatter:
+      available: true
+      command: gofmt -w
+
+sdd_init_staleness:
+  threshold_days: 7
+  trigger_files:
+    - go.mod
+    - tools/go.mod
+    - internal/api/spec.yaml
+    - sqlc.yaml
+    - lefthook.yml
+  last_refresh: "2026-07-18T00:00:00Z"
+  status: fresh

@@ -1,7 +1,8 @@
 package config
 
 import (
-	"log"
+	"fmt"
+	"os"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/joho/godotenv"
@@ -39,9 +40,11 @@ type Config struct {
 func Load() (*Config, error) {
 	cfg := &Config{}
 
-	// Load .env
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+	// Load .env file if present. When running in Docker or CI, environment
+	// variables are injected directly and no .env file exists — that is fine.
+	// Only fatal on parse errors, not on missing file.
+	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
+		return nil, fmt.Errorf("loading .env file: %w", err)
 	}
 
 	// Load server configuration from environment variables

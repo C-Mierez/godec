@@ -18,14 +18,17 @@ MIGRATIONS_DIR := internal/postgres/migrations
 SCHEMA_FILE := internal/postgres/db/schema.sql
 
 
-.PHONY: help api-codegen codegen-check sqlc sqlc-check dump goose-new goose-up goose-down goose-status migrate hooks-install
+.PHONY: help api codegen codegen-check sqlc sqlc-check dump goose-new goose-up goose-down goose-status migrate hooks-install
 
 help:
 	@echo "Usage: make <target> [VAR=value]"
 	@echo
+	@echo "Build:"
+	@echo "  api               - build the API server binary to build/"
+	@echo
 	@echo "Common targets:"
 	@echo "  hooks-install   - install git hooks with lefthook"
-	@echo "  api-codegen     - run API code generation"
+	@echo "  codegen         - run API code generation"
 	@echo "  codegen-check   - run API code generation and verify it is up to date"
 	@echo "  sqlc            - run sqlc generate"
 	@echo "  sqlc-check      - run sqlc generate and verify it is up to date"
@@ -36,7 +39,14 @@ help:
 	@echo "  migrate         - run migrations then dump schema to $(SCHEMA_FILE)"
 	@echo "  dump     - pg_dump --schema-only to $(SCHEMA_FILE)"
 
+api:
+	@echo "Building API server..."
+	@mkdir -p build
+	go build -o build/api.exe ./cmd/api
 
+run: api
+	@echo "Running the application..."
+	./build/api.exe
 
 dump:
 	@echo "Dumping schema to $(SCHEMA_FILE)"
@@ -65,7 +75,7 @@ sqlc: dump
 sqlc-check:
 	@echo "Running sqlc drift check..."
 	$(GO_TOOL) sqlc generate -f $(SQLC_CONFIG)
-	@git diff --exit-code -- internal/postgres/db/api_keys.sql.go internal/postgres/db/db.go internal/postgres/db/models.go internal/postgres/db/tenants.sql.go
+	@git diff --exit-code -- internal/postgres/db/schema.sql internal/postgres/db/api_keys.sql.go internal/postgres/db/db.go internal/postgres/db/models.go internal/postgres/db/tenants.sql.go
 
 goose-new:
 	@if [ -z "$(NAME)" ]; then echo "Usage: make goose-new NAME=descriptive_name"; exit 1; fi

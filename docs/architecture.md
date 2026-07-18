@@ -22,8 +22,11 @@ The result is a codebase where the domain packages remain small, testable, and i
 
 - [internal/apikey](../internal/apikey): API key generation and validation.
 - [internal/tenant](../internal/tenant): tenant business logic and tenant HTTP endpoints.
-- [internal/health](../internal/health): liveness and readiness endpoints.
-- [internal/media](../internal/media): media HTTP entrypoints and future media-facing orchestration.
+
+### Transport-only features
+
+- Health (`GET /live`, `GET /ready`): no domain package. The handlers live in [internal/api/health_handlers.go](../internal/api/health_handlers.go) and return static responses; the package is small enough to stay in the transport layer.
+- Media (`POST /v1/media/upload-url`): no domain package yet. The handler in [internal/api/media_handlers.go](../internal/api/media_handlers.go) is a stub that returns a hardcoded URL with a `// TODO: Replace with actual S3 presigned URL generation` marker. Once real media orchestration is added, this should be promoted to its own `internal/media` feature package following the same shape as `apikey` and `tenant`.
 
 ### Infrastructure
 
@@ -168,8 +171,8 @@ Tenants show the same split:
 
 ### Health and media
 
-- `internal/health` stays lightweight and dependency-free.
-- `internal/media` is intentionally thin until real media orchestration is added.
+- Health and media currently have no `internal/health` or `internal/media` feature package. Their handlers live in [internal/api/health_handlers.go](../internal/api/health_handlers.go) and [internal/api/media_handlers.go](../internal/api/media_handlers.go) respectively. The health handlers are dependency-free liveness and readiness probes. The media handler is a stub returning a hardcoded URL and is awaiting real S3 presigned URL generation.
+- When media orchestration becomes non-trivial, extract it into `internal/media` with a model, service, store interface, and postgres adapter, then register the feature handler in the same package — the same shape as `apikey` and `tenant`.
 
 ## 10. Working Rule Of Thumb
 
