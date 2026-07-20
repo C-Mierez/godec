@@ -1,3 +1,4 @@
+// Package logging provides structured logging setup for the application.
 package logging
 
 import (

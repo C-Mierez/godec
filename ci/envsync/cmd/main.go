@@ -1,6 +1,8 @@
+// Package main provides the envsync CLI for keeping .env files in sync with Go config structs.
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -134,7 +136,8 @@ func printFixReport(report *envsync.FixReport) error {
 }
 
 func printCheckError(err error) {
-	if checkErr, ok := err.(*envsync.CheckError); ok {
+	var checkErr *envsync.CheckError
+	if errors.As(err, &checkErr) {
 		fmt.Fprintln(os.Stderr, checkErr.Error())
 		for _, issue := range checkErr.Issues {
 			if len(issue.Missing) > 0 {

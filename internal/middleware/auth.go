@@ -1,3 +1,4 @@
+// Package middleware provides Echo middleware for authentication and request validation.
 package middleware
 
 import (
@@ -17,28 +18,33 @@ type AuthError struct {
 
 func (e *AuthError) Error() string { return e.Message }
 
+// Auth error codes.
 const (
 	MissingAPIKey = "MISSING_API_KEY"
 	InvalidAPIKey = "INVALID_API_KEY"
 	ExpiredAPIKey = "EXPIRED_API_KEY"
 )
 
+// NewMissingKeyError returns an AuthError for missing API keys.
 func NewMissingKeyError() *AuthError {
 	return &AuthError{Code: MissingAPIKey, Message: "API key is missing", Status: 401}
 }
 
+// NewInvalidKeyError returns an AuthError for invalid API keys.
 func NewInvalidKeyError() *AuthError {
 	return &AuthError{Code: InvalidAPIKey, Message: "API key is invalid", Status: 401}
 }
 
+// NewExpiredKeyError returns an AuthError for expired API keys.
 func NewExpiredKeyError() *AuthError {
 	return &AuthError{Code: ExpiredAPIKey, Message: "API key is expired", Status: 403}
 }
 
-// Context key for storing the validated ApiKey in request context
+// Context key for storing the validated APIKey in request context
 type contextKey string
 
-const ContextKeyApiKey = contextKey("apiKey")
+// ContextKeyAPIKey is the context key used to store the validated API key.
+const ContextKeyAPIKey = contextKey("apiKey")
 
 // APIKeyAuthenticator returns an OpenAPI authentication function that validates
 // the ApiKeyAuth scheme using the existing API key validator abstraction.
@@ -67,7 +73,7 @@ func APIKeyAuthenticator(validator APIKeyValidator) openapi3filter.Authenticatio
 		}
 
 		requestWithKey := input.RequestValidationInput.Request.WithContext(
-			context.WithValue(input.RequestValidationInput.Request.Context(), ContextKeyApiKey, apiKey),
+			context.WithValue(input.RequestValidationInput.Request.Context(), ContextKeyAPIKey, apiKey),
 		)
 		input.RequestValidationInput.Request = requestWithKey
 

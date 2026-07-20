@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/echo/v5/middleware"
 )
 
+// BuildGlobalMiddlewares returns the standard middleware chain for the Echo server.
 func BuildGlobalMiddlewares(corsAllowedOrigins []string) []echo.MiddlewareFunc {
 	return []echo.MiddlewareFunc{
 		middleware.RequestLogger(), middleware.Recover(), middleware.CORSWithConfig(middleware.CORSConfig{

@@ -1,3 +1,4 @@
+// Package tenant defines the tenant domain model and service interface.
 package tenant
 
 import (
@@ -6,18 +7,21 @@ import (
 	"github.com/google/uuid"
 )
 
-type TenantStatus string
+// Status represents the lifecycle state of a tenant.
+type Status string
 
+// Tenant status constants.
 const (
-	TenantStatusActive   TenantStatus = "active"
-	TenantStatusInactive TenantStatus = "inactive"
+	StatusActive   Status = "active"
+	StatusInactive Status = "inactive"
 )
 
+// Tenant represents a multi-tenant customer record.
 type Tenant struct {
 	ID        uuid.UUID
 	Name      string
 	Email     string
-	Status    TenantStatus
+	Status    Status
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

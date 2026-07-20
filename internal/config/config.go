@@ -1,3 +1,4 @@
+// Package config loads application configuration from environment variables.
 package config
 
 import (
@@ -8,23 +9,19 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// ServerEnv holds HTTP server configuration from environment variables.
 type ServerEnv struct {
 	ServerAddress      string `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
 	Env                string `env:"ENV" envDefault:"development"`
 	CORSAllowedOrigins string `env:"CORS_ALLOWED_ORIGINS" envDefault:"http://127.0.0.1:8080,http://localhost:8080"`
 }
 
+// DatabaseEnv holds the PostgreSQL connection string.
 type DatabaseEnv struct {
 	URL string `env:"DATABASE_URL"`
 }
 
-type InternalEnv struct {
-	GOOSE_DRIVER        string `env:"GOOSE_DRIVER"`
-	GOOSE_DBSTRING      string `env:"GOOSE_DBSTRING"`
-	GOOSE_MIGRATION_DIR string `env:"GOOSE_MIGRATION_DIR"`
-	GOOSE_TABLE         string `env:"GOOSE_TABLE"`
-}
-
+// Config is the top-level application configuration loaded from environment variables.
 type Config struct {
 	Server struct {
 		ServerEnv
@@ -32,11 +29,9 @@ type Config struct {
 	Database struct {
 		DatabaseEnv
 	}
-	internal struct {
-		InternalEnv
-	}
 }
 
+// Load reads .env and parses environment variables into a Config.
 func Load() (*Config, error) {
 	cfg := &Config{}
 

@@ -1,6 +1,7 @@
 package envsync
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -86,8 +87,8 @@ func TestCheckReportsMissingAndStaleKeys(t *testing.T) {
 		t.Fatal("expected Check() to fail")
 	}
 
-	checkErr, ok := err.(*CheckError)
-	if !ok {
+	var checkErr *CheckError
+	if !errors.As(err, &checkErr) {
 		t.Fatalf("expected *CheckError, got %T", err)
 	}
 

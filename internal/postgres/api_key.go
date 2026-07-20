@@ -1,3 +1,4 @@
+// Package postgres implements persistence layer repositories using SQLC-generated queries.
 package postgres
 
 import (
@@ -8,17 +9,20 @@ import (
 	"github.com/google/uuid"
 )
 
-type ApiKeyStore struct {
+// APIKeyStore implements the apikey.Store interface using SQLC-generated queries.
+type APIKeyStore struct {
 	queries *db.Queries
 }
 
-func NewApiKeyStore(queries *db.Queries) *ApiKeyStore {
-	return &ApiKeyStore{queries: queries}
+// NewAPIKeyStore creates an APIKeyStore backed by the given SQLC queries.
+func NewAPIKeyStore(queries *db.Queries) *APIKeyStore {
+	return &APIKeyStore{queries: queries}
 }
 
-func (s *ApiKeyStore) CreateApiKey(ctx context.Context, tenantID uuid.UUID, name, hashedKey string, scopes []string) (*apikey.ApiKey, error) {
+// CreateAPIKey inserts a new API key and returns the persisted record.
+func (s *APIKeyStore) CreateAPIKey(ctx context.Context, tenantID uuid.UUID, name, hashedKey string, scopes []string) (*apikey.APIKey, error) {
 	row, err := s.queries.CreateApiKey(ctx, db.CreateApiKeyParams{
-		TenantID:  db.UuidToPGUUID(tenantID),
+		TenantID:  db.UUIDToPGUUID(tenantID),
 		Name:      name,
 		HashedKey: hashedKey,
 		Scopes:    scopes,
@@ -31,7 +35,8 @@ func (s *ApiKeyStore) CreateApiKey(ctx context.Context, tenantID uuid.UUID, name
 	return &domain, nil
 }
 
-func (s *ApiKeyStore) GetApiKeyByHashedKey(ctx context.Context, hashedKey string) (*apikey.ApiKey, error) {
+// GetAPIKeyByHashedKey looks up an API key by its SHA-256 hash.
+func (s *APIKeyStore) GetAPIKeyByHashedKey(ctx context.Context, hashedKey string) (*apikey.APIKey, error) {
 	row, err := s.queries.GetApiKeyByHashedKey(ctx, hashedKey)
 	if err != nil {
 		return nil, err

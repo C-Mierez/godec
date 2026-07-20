@@ -22,3 +22,7 @@ pre-commit:
         - name: go mod tidy
           run: go mod tidy
           stage_fixed: true
+
+        - name: lint
+          glob: "*.go"
+          run: golangci-lint run --new-from-rev=HEAD~1

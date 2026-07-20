@@ -8,16 +8,21 @@ import (
 	"github.com/oapi-codegen/runtime/types"
 )
 
-type APIKeyHandlers struct {
+// APIKeyHandlers implements API key management endpoints.
+type APIKeyHandlers struct { //nolint:revive // name is intentional for clarity
 	service *apikey.Service
 }
 
-func NewAPIKeyHandlers(service *apikey.Service) *APIKeyHandlers {
+// NewAPIKeyHandlers creates an APIKeyHandlers backed by the given service.
+func NewAPIKeyHandlers(service *apikey.Service) *APIKeyHandlers { //nolint:revive // name is intentional for clarity
 	return &APIKeyHandlers{
 		service: service,
 	}
 }
 
+// CreateApiKey handles API key creation requests.
+//
+//nolint:revive // var-naming: name matches generated StrictServerInterface
 func (h *APIKeyHandlers) CreateApiKey(ctx context.Context, request CreateApiKeyRequestObject) (CreateApiKeyResponseObject, error) {
 	if request.Body == nil {
 		return CreateApiKey400JSONResponse{BadRequestJSONResponse{Error: "missing request body"}}, nil
@@ -28,7 +33,7 @@ func (h *APIKeyHandlers) CreateApiKey(ctx context.Context, request CreateApiKeyR
 		scopes = *request.Body.Scopes
 	}
 
-	plainKey, apiKey, err := h.service.GenerateApiKey(
+	plainKey, apiKey, err := h.service.GenerateAPIKey(
 		ctx,
 		uuid.UUID(request.Body.TenantId),
 		request.Body.Name,
@@ -41,8 +46,8 @@ func (h *APIKeyHandlers) CreateApiKey(ctx context.Context, request CreateApiKeyR
 	return CreateApiKey201JSONResponse(h.domainAPIKeyToResponse(plainKey, apiKey)), nil
 }
 
-// domainAPIKeyToResponse converts domain apikey.ApiKey to API CreateAPIKeyResponse
-func (h *APIKeyHandlers) domainAPIKeyToResponse(plainKey string, ak *apikey.ApiKey) CreateAPIKeyResponse {
+// domainAPIKeyToResponse converts domain apikey.APIKey to API CreateAPIKeyResponse.
+func (h *APIKeyHandlers) domainAPIKeyToResponse(plainKey string, ak *apikey.APIKey) CreateAPIKeyResponse {
 	if ak == nil {
 		return CreateAPIKeyResponse{}
 	}

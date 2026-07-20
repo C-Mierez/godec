@@ -1,3 +1,4 @@
+// Package echovalidator provides an OpenAPI request validation middleware for Echo v5.
 package echovalidator
 
 import (
@@ -17,14 +18,22 @@ import (
 	echoMiddleware "github.com/labstack/echo/v5/middleware"
 )
 
+// Context keys used by the echovalidator middleware.
+type contextKey string
+
+// Context keys used by the echovalidator middleware.
 const (
-	EchoContextKey = "oapi-codegen/echo-context"
-	UserDataKey    = "oapi-codegen/user-data"
+	EchoContextKey contextKey = "oapi-codegen/echo-context"
+	UserDataKey    contextKey = "oapi-codegen/user-data"
 )
 
+// ErrorHandler is called when request validation fails.
 type ErrorHandler func(c *echo.Context, err error) error
+
+// MultiErrorHandler handles multiple validation errors from OpenAPI spec validation.
 type MultiErrorHandler func(openapi3.MultiError) error
 
+// Options configures the OpenAPI request validator middleware.
 type Options struct {
 	ErrorHandler          ErrorHandler
 	Options               openapi3filter.Options
@@ -35,6 +44,7 @@ type Options struct {
 	SilenceServersWarning bool
 }
 
+// OapiRequestValidatorWithOptions returns an Echo middleware that validates requests against the OpenAPI spec.
 func OapiRequestValidatorWithOptions(swagger *openapi3.T, options *Options) echo.MiddlewareFunc {
 	if swagger.Servers != nil && (options == nil || !options.SilenceServersWarning) {
 		slog.Warn("OapiRequestValidatorWithOptions called with an OpenAPI spec that has Servers set. This can cause unexpected host validation failures.")
@@ -65,16 +75,16 @@ func OapiRequestValidatorWithOptions(swagger *openapi3.T, options *Options) echo
 	}
 }
 
+// ValidateRequestFromContext validates the current request against the OpenAPI router.
 func ValidateRequestFromContext(ctx *echo.Context, router routers.Router, options *Options) error {
 	req := ctx.Request()
 	route, pathParams, err := router.FindRoute(req)
 	if err != nil {
-		switch e := err.(type) {
-		case *routers.RouteError:
-			return echo.NewHTTPError(http.StatusNotFound, e.Reason)
-		default:
-			return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("error validating route: %s", err.Error()))
+		var routeErr *routers.RouteError
+		if errors.As(err, &routeErr) {
+			return echo.NewHTTPError(http.StatusNotFound, routeErr.Reason)
 		}
+		return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("error validating route: %s", err.Error()))
 	}
 
 	validationInput := &openapi3filter.RequestValidationInput{
@@ -97,33 +107,35 @@ func ValidateRequestFromContext(ctx *echo.Context, router routers.Router, option
 			return getMultiErrorHandlerFromOptions(options)(me)
 		}
 
-		switch e := err.(type) {
-		case *openapi3filter.RequestError:
-			errorLines := strings.Split(e.Error(), "\n")
+		var reqErr *openapi3filter.RequestError
+		if errors.As(err, &reqErr) {
+			errorLines := strings.Split(reqErr.Error(), "\n")
 			return &echo.HTTPError{Code: http.StatusBadRequest, Message: errorLines[0]}
-		case *openapi3filter.SecurityRequirementsError:
+		}
+
+		var secErr *openapi3filter.SecurityRequirementsError
+		if errors.As(err, &secErr) {
 			var authErr *middleware.AuthError
-			if errors.As(e, &authErr) {
+			if errors.As(err, &authErr) {
 				return authErr
 			}
-
-			for _, secErr := range e.Errors {
-				httpErr, ok := secErr.(*echo.HTTPError)
-				if ok {
+			for _, e := range secErr.Errors {
+				var httpErr *echo.HTTPError
+				if errors.As(e, &httpErr) {
 					return httpErr
 				}
 			}
-
-			return &echo.HTTPError{Code: http.StatusForbidden, Message: e.Error()}
-		default:
-			return &echo.HTTPError{Code: http.StatusInternalServerError, Message: fmt.Sprintf("error validating request: %s", err)}
+			return &echo.HTTPError{Code: http.StatusForbidden, Message: secErr.Error()}
 		}
+
+		return &echo.HTTPError{Code: http.StatusInternalServerError, Message: fmt.Sprintf("error validating request: %s", err)}
 	}
 
 	ctx.SetRequest(validationInput.Request)
 	return nil
 }
 
+// GetEchoContext retrieves the Echo context from a standard context.Context.
 func GetEchoContext(c context.Context) *echo.Context {
 	iface := c.Value(EchoContextKey)
 	if iface == nil {
@@ -136,6 +148,7 @@ func GetEchoContext(c context.Context) *echo.Context {
 	return eCtx
 }
 
+// GetUserData retrieves the user data set in Options from a standard context.Context.
 func GetUserData(c context.Context) any {
 	return c.Value(UserDataKey)
 }

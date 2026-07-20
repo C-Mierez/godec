@@ -8,6 +8,7 @@ GO_TOOL := go -C $(TOOLS_DIR) tool
 SQLC := $(GO_TOOL) sqlc
 GOOSE := $(GO_TOOL) goose
 LEFTHOOK := $(GO_TOOL) lefthook
+GOLANGCI_LINT := $(GO_TOOL) golangci-lint
 
 SQLC_CONFIG := $(abspath sqlc.yaml)
 LEFTHOOK_CONFIG := $(abspath lefthook.yml)
@@ -18,7 +19,7 @@ MIGRATIONS_DIR := internal/postgres/migrations
 SCHEMA_FILE := internal/postgres/db/schema.sql
 
 
-.PHONY: help api codegen codegen-check sqlc sqlc-check dump goose-new goose-up goose-down goose-status migrate hooks-install
+.PHONY: help api codegen codegen-check sqlc sqlc-check dump goose-new goose-up goose-down goose-status migrate hooks-install lint lint-fix
 
 help:
 	@echo "Usage: make <target> [VAR=value]"
@@ -37,7 +38,9 @@ help:
 	@echo "  goose-down      - run goose down (one migration)"
 	@echo "  goose-status    - show migration status"
 	@echo "  migrate         - run migrations then dump schema to $(SCHEMA_FILE)"
-	@echo "  dump     - pg_dump --schema-only to $(SCHEMA_FILE)"
+	@echo "  dump            - pg_dump --schema-only to $(SCHEMA_FILE)"
+	@echo "  lint            - run golangci-lint"
+	@echo "  lint-fix        - run golangci-lint with auto-fix"
 
 api:
 	@echo "Building API server..."
@@ -95,3 +98,11 @@ goose-status:
 
 migrate: goose-up sqlc
 	@echo "Migrations applied and schema dumped to $(SCHEMA_FILE)"
+
+lint:
+	@echo "Running linter..."
+	$(GOLANGCI_LINT) run ./...
+
+lint-fix:
+	@echo "Running linter with auto-fix..."
+	$(GOLANGCI_LINT) run --fix ./...

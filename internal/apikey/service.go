@@ -6,26 +6,30 @@ import (
 	"github.com/google/uuid"
 )
 
+// Store defines the persistence operations required by the API key service.
 type Store interface {
-	CreateApiKey(ctx context.Context, tenantID uuid.UUID, name, hashedKey string, scopes []string) (*ApiKey, error)
-	GetApiKeyByHashedKey(ctx context.Context, hashedKey string) (*ApiKey, error)
+	CreateAPIKey(ctx context.Context, tenantID uuid.UUID, name, hashedKey string, scopes []string) (*APIKey, error)
+	GetAPIKeyByHashedKey(ctx context.Context, hashedKey string) (*APIKey, error)
 }
 
+// Service implements API key generation and validation logic.
 type Service struct {
 	store Store
 }
 
+// NewService creates an API key service backed by the given store.
 func NewService(store Store) *Service {
 	return &Service{store: store}
 }
 
-func (s *Service) GenerateApiKey(ctx context.Context, tenantID uuid.UUID, name string, scopes []string) (string, *ApiKey, error) {
+// GenerateAPIKey creates a new API key, returning the plain key and the persisted record.
+func (s *Service) GenerateAPIKey(ctx context.Context, tenantID uuid.UUID, name string, scopes []string) (string, *APIKey, error) {
 	plainKey, hashedKey, err := generateKey()
 	if err != nil {
 		return "", nil, err
 	}
 
-	apiKey, err := s.store.CreateApiKey(ctx, tenantID, name, hashedKey, scopes)
+	apiKey, err := s.store.CreateAPIKey(ctx, tenantID, name, hashedKey, scopes)
 	if err != nil {
 		return "", nil, err
 	}
@@ -33,10 +37,11 @@ func (s *Service) GenerateApiKey(ctx context.Context, tenantID uuid.UUID, name s
 	return plainKey, apiKey, nil
 }
 
-func (s *Service) ValidateAPIKey(ctx context.Context, plainKey string) (bool, *ApiKey, error) {
+// ValidateAPIKey verifies a plain API key by hashing it and looking up the stored record.
+func (s *Service) ValidateAPIKey(ctx context.Context, plainKey string) (bool, *APIKey, error) {
 	hashedKey := hashKey(plainKey)
 
-	apiKey, err := s.store.GetApiKeyByHashedKey(ctx, hashedKey)
+	apiKey, err := s.store.GetAPIKeyByHashedKey(ctx, hashedKey)
 	if err != nil {
 		return false, nil, err
 	}

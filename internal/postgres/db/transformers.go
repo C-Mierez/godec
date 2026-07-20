@@ -1,3 +1,4 @@
+// Package db contains SQLC-generated database queries and type transformers.
 package db
 
 import (
@@ -7,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+// PgUUIDToUUID converts a pgtype.UUID to a google/uuid.UUID.
 func PgUUIDToUUID(id pgtype.UUID) uuid.UUID {
 	if !id.Valid {
 		return uuid.Nil
@@ -15,7 +17,8 @@ func PgUUIDToUUID(id pgtype.UUID) uuid.UUID {
 	return uuid.UUID(id.Bytes)
 }
 
-func UuidToPGUUID(id uuid.UUID) pgtype.UUID {
+// UUIDToPGUUID converts a google/uuid.UUID to a pgtype.UUID.
+func UUIDToPGUUID(id uuid.UUID) pgtype.UUID {
 	if id == uuid.Nil {
 		return pgtype.UUID{}
 	}
@@ -26,6 +29,7 @@ func UuidToPGUUID(id uuid.UUID) pgtype.UUID {
 	}
 }
 
+// PgTimestamptzToTime converts a pgtype.Timestamptz to a time.Time.
 func PgTimestamptzToTime(ts pgtype.Timestamptz) time.Time {
 	if !ts.Valid {
 		return time.Time{}
@@ -34,6 +38,7 @@ func PgTimestamptzToTime(ts pgtype.Timestamptz) time.Time {
 	return ts.Time
 }
 
+// PgTimestamptzToOptionalTime converts a pgtype.Timestamptz to a *time.Time, returning nil if invalid.
 func PgTimestamptzToOptionalTime(ts pgtype.Timestamptz) *time.Time {
 	if !ts.Valid {
 		return nil
@@ -43,6 +48,7 @@ func PgTimestamptzToOptionalTime(ts pgtype.Timestamptz) *time.Time {
 	return &t
 }
 
+// TimeToPGTimestamptz converts a time.Time to a pgtype.Timestamptz.
 func TimeToPGTimestamptz(ts time.Time) pgtype.Timestamptz {
 	if ts.IsZero() {
 		return pgtype.Timestamptz{}
@@ -54,6 +60,7 @@ func TimeToPGTimestamptz(ts time.Time) pgtype.Timestamptz {
 	}
 }
 
+// OptionalTimeToPGTimestamptz converts a *time.Time to a pgtype.Timestamptz, returning an invalid value if nil.
 func OptionalTimeToPGTimestamptz(ts *time.Time) pgtype.Timestamptz {
 	if ts == nil {
 		return pgtype.Timestamptz{}

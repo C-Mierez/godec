@@ -1,3 +1,4 @@
+// Package apikey provides API key generation, validation, and persistence.
 package apikey
 
 import (
@@ -28,12 +29,6 @@ func generateKey() (plainKey string, hashedKey string, err error) {
 	hashedKey = hashKey(plainKey)
 
 	return plainKey, hashedKey, nil
-}
-
-func validatePlainKey(plainKey string, storedHash string) bool {
-	hHex := hashKey(plainKey)
-
-	return subtle.ConstantTimeCompare([]byte(hHex), []byte(storedHash)) == 1
 }
 
 func validateHashedKey(providedHash string, storedHash string) bool {

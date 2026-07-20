@@ -1,3 +1,4 @@
+// Package envsync synchronizes .env files with Go config structs.
 package envsync
 
 import (
@@ -11,35 +12,42 @@ import (
 	"strings"
 )
 
+// Paths holds the config source path and the env files to sync.
 type Paths struct {
 	ConfigPath string
 	Files      []string
 }
 
+// Entry represents a single environment variable with its name and optional default value.
 type Entry struct {
 	Name       string
 	Default    string
 	HasDefault bool
 }
 
+// Schema holds the ordered list of environment entries parsed from the Go config.
 type Schema struct {
 	Entries []Entry
 }
 
+// FileIssue describes missing or stale keys in a single env file.
 type FileIssue struct {
 	Path    string
 	Missing []string
 	Stale   []string
 }
 
+// CheckError is returned by Check when one or more env files have issues.
 type CheckError struct {
 	Issues []FileIssue
 }
 
+// FixReport describes the changes made by Fix to each env file.
 type FixReport struct {
 	Files []FileChange
 }
 
+// FileChange describes the changes made to a single env file.
 type FileChange struct {
 	Path      string
 	Created   bool
@@ -73,6 +81,7 @@ func (e *CheckError) Error() string {
 	return builder.String()
 }
 
+// Fix synchronizes env files with the schema derived from the Go config.
 func Fix(paths Paths) (*FixReport, error) {
 	schema, err := LoadSchema(paths.ConfigPath)
 	if err != nil {
@@ -95,6 +104,7 @@ func Fix(paths Paths) (*FixReport, error) {
 	return report, nil
 }
 
+// Check verifies that env files contain all required keys and no stale keys.
 func Check(paths Paths) error {
 	schema, err := LoadSchema(paths.ConfigPath)
 	if err != nil {
@@ -122,6 +132,7 @@ func Check(paths Paths) error {
 	return nil
 }
 
+// LoadSchema parses a Go config file and extracts environment variable entries.
 func LoadSchema(configPath string) (Schema, error) {
 	fileSet := token.NewFileSet()
 	file, err := parser.ParseFile(fileSet, configPath, nil, parser.ParseComments)

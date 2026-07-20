@@ -9,7 +9,7 @@ import (
 
 // APIKeyValidator defines the interface used by the OAPI authentication glue.
 type APIKeyValidator interface {
-	ValidateAPIKey(ctx context.Context, key string) (*apikey.ApiKey, error)
+	ValidateAPIKey(ctx context.Context, key string) (*apikey.APIKey, error)
 }
 
 type apiKeyValidatorImpl struct {
@@ -22,7 +22,7 @@ func NewAPIKeyValidator(svc *apikey.Service) APIKeyValidator {
 	return &apiKeyValidatorImpl{svc: svc}
 }
 
-func (a *apiKeyValidatorImpl) ValidateAPIKey(ctx context.Context, key string) (*apikey.ApiKey, error) {
+func (a *apiKeyValidatorImpl) ValidateAPIKey(ctx context.Context, key string) (*apikey.APIKey, error) {
 	isValid, ak, err := a.svc.ValidateAPIKey(ctx, key)
 	if err != nil {
 		return nil, NewInvalidKeyError()

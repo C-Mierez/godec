@@ -6,7 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
-type ApiKey struct {
+// APIKey represents an API key with its metadata, scopes, and expiration.
+type APIKey struct {
 	ID         uuid.UUID
 	TenantID   uuid.UUID
 	Name       string

@@ -1,3 +1,4 @@
+// Package main is the composition root for the godec API server.
 package main
 
 import (
@@ -43,7 +44,7 @@ func main() {
 	defer pool.Close()
 
 	queries := db.New(pool)
-	apiKeyStore := postgres.NewApiKeyStore(queries)
+	apiKeyStore := postgres.NewAPIKeyStore(queries)
 	tenantStore := postgres.NewTenantStore(queries)
 	apiKeyService := apikeypkg.NewService(apiKeyStore)
 	tenantService := tenantpkg.NewService(tenantStore)
@@ -72,9 +73,17 @@ func main() {
 			return
 		}
 
+		// Auth errors are intercepted by the echovalidator middleware before
+		// the operation handler runs, so the generated per-operation response
+		// types (GetMediaUploadURL401JSONResponse, etc.) cannot be used here.
+		// We serialize the generated AuthErrorResponse struct directly to
+		// guarantee the JSON shape matches the OpenAPI spec schema.
 		var ae *middleware.AuthError
 		if errors.As(err, &ae) {
-			c.JSON(ae.Status, map[string]string{"error": ae.Message, "code": ae.Code})
+			_ = c.JSON(ae.Status, api.AuthErrorResponse{
+				Code:  api.AuthErrorResponseCode(ae.Code),
+				Error: ae.Message,
+			})
 			return
 		}
 		echo.DefaultHTTPErrorHandler(false)(c, err)
@@ -116,5 +125,4 @@ func main() {
 	if err := sc.Start(serverCtx, e); err != nil {
 		slog.Error("server error", "error", err)
 	}
-
 }
