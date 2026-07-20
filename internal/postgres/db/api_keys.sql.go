@@ -11,7 +11,23 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const countActiveApiKeysByTenantID = `-- name: CountActiveApiKeysByTenantID :one
+const countAPIKeysByTenantID = `-- name: CountAPIKeysByTenantID :one
+SELECT
+        COUNT(*)
+FROM
+        api_keys
+WHERE
+        tenant_id = $1
+`
+
+func (q *Queries) CountAPIKeysByTenantID(ctx context.Context, tenantID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countAPIKeysByTenantID, tenantID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countActiveAPIKeysByTenantID = `-- name: CountActiveAPIKeysByTenantID :one
 SELECT
         COUNT(*)
 FROM
@@ -21,30 +37,14 @@ WHERE
         AND (expires_at IS NULL OR expires_at > NOW())
 `
 
-func (q *Queries) CountActiveApiKeysByTenantID(ctx context.Context, tenantID pgtype.UUID) (int64, error) {
-	row := q.db.QueryRow(ctx, countActiveApiKeysByTenantID, tenantID)
+func (q *Queries) CountActiveAPIKeysByTenantID(ctx context.Context, tenantID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countActiveAPIKeysByTenantID, tenantID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
-const countApiKeysByTenantID = `-- name: CountApiKeysByTenantID :one
-SELECT
-        COUNT(*)
-FROM
-        api_keys
-WHERE
-        tenant_id = $1
-`
-
-func (q *Queries) CountApiKeysByTenantID(ctx context.Context, tenantID pgtype.UUID) (int64, error) {
-	row := q.db.QueryRow(ctx, countApiKeysByTenantID, tenantID)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
-const createApiKey = `-- name: CreateApiKey :one
+const createAPIKey = `-- name: CreateAPIKey :one
 INSERT INTO
         api_keys (tenant_id, name, token_id, hashed_secret, scopes)
 VALUES
@@ -53,7 +53,7 @@ RETURNING
         id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 `
 
-type CreateApiKeyParams struct {
+type CreateAPIKeyParams struct {
 	TenantID     pgtype.UUID
 	Name         string
 	TokenID      string
@@ -61,8 +61,8 @@ type CreateApiKeyParams struct {
 	Scopes       []string
 }
 
-func (q *Queries) CreateApiKey(ctx context.Context, arg CreateApiKeyParams) (ApiKey, error) {
-	row := q.db.QueryRow(ctx, createApiKey,
+func (q *Queries) CreateAPIKey(ctx context.Context, arg CreateAPIKeyParams) (ApiKey, error) {
+	row := q.db.QueryRow(ctx, createAPIKey,
 		arg.TenantID,
 		arg.Name,
 		arg.TokenID,
@@ -85,31 +85,31 @@ func (q *Queries) CreateApiKey(ctx context.Context, arg CreateApiKeyParams) (Api
 	return i, err
 }
 
-const deleteApiKey = `-- name: DeleteApiKey :exec
+const deleteAPIKey = `-- name: DeleteAPIKey :exec
 DELETE FROM
         api_keys
 WHERE
         id = $1
 `
 
-func (q *Queries) DeleteApiKey(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, deleteApiKey, id)
+func (q *Queries) DeleteAPIKey(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteAPIKey, id)
 	return err
 }
 
-const deleteApiKeysByTenantID = `-- name: DeleteApiKeysByTenantID :exec
+const deleteAPIKeysByTenantID = `-- name: DeleteAPIKeysByTenantID :exec
 DELETE FROM
         api_keys
 WHERE
         tenant_id = $1
 `
 
-func (q *Queries) DeleteApiKeysByTenantID(ctx context.Context, tenantID pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, deleteApiKeysByTenantID, tenantID)
+func (q *Queries) DeleteAPIKeysByTenantID(ctx context.Context, tenantID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteAPIKeysByTenantID, tenantID)
 	return err
 }
 
-const getApiKeyByID = `-- name: GetApiKeyByID :one
+const getAPIKeyByID = `-- name: GetAPIKeyByID :one
 SELECT
         id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 FROM
@@ -118,8 +118,8 @@ WHERE
         id = $1
 `
 
-func (q *Queries) GetApiKeyByID(ctx context.Context, id pgtype.UUID) (ApiKey, error) {
-	row := q.db.QueryRow(ctx, getApiKeyByID, id)
+func (q *Queries) GetAPIKeyByID(ctx context.Context, id pgtype.UUID) (ApiKey, error) {
+	row := q.db.QueryRow(ctx, getAPIKeyByID, id)
 	var i ApiKey
 	err := row.Scan(
 		&i.ID,
@@ -136,7 +136,7 @@ func (q *Queries) GetApiKeyByID(ctx context.Context, id pgtype.UUID) (ApiKey, er
 	return i, err
 }
 
-const getApiKeyByTokenId = `-- name: GetApiKeyByTokenId :one
+const getAPIKeyByTokenID = `-- name: GetAPIKeyByTokenID :one
 SELECT
         id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 FROM
@@ -145,8 +145,8 @@ WHERE
         token_id = $1
 `
 
-func (q *Queries) GetApiKeyByTokenId(ctx context.Context, tokenID string) (ApiKey, error) {
-	row := q.db.QueryRow(ctx, getApiKeyByTokenId, tokenID)
+func (q *Queries) GetAPIKeyByTokenID(ctx context.Context, tokenID string) (ApiKey, error) {
+	row := q.db.QueryRow(ctx, getAPIKeyByTokenID, tokenID)
 	var i ApiKey
 	err := row.Scan(
 		&i.ID,
@@ -163,7 +163,50 @@ func (q *Queries) GetApiKeyByTokenId(ctx context.Context, tokenID string) (ApiKe
 	return i, err
 }
 
-const listActiveApiKeysByTenantID = `-- name: ListActiveApiKeysByTenantID :many
+const listAPIKeysByTenantID = `-- name: ListAPIKeysByTenantID :many
+SELECT
+        id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
+FROM
+        api_keys
+WHERE
+        tenant_id = $1
+ORDER BY
+        created_at DESC,
+        id DESC
+`
+
+func (q *Queries) ListAPIKeysByTenantID(ctx context.Context, tenantID pgtype.UUID) ([]ApiKey, error) {
+	rows, err := q.db.Query(ctx, listAPIKeysByTenantID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ApiKey
+	for rows.Next() {
+		var i ApiKey
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Name,
+			&i.Scopes,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.LastUsedAt,
+			&i.ExpiresAt,
+			&i.TokenID,
+			&i.HashedSecret,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActiveAPIKeysByTenantID = `-- name: ListActiveAPIKeysByTenantID :many
 SELECT
         id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 FROM
@@ -176,8 +219,8 @@ ORDER BY
         id DESC
 `
 
-func (q *Queries) ListActiveApiKeysByTenantID(ctx context.Context, tenantID pgtype.UUID) ([]ApiKey, error) {
-	rows, err := q.db.Query(ctx, listActiveApiKeysByTenantID, tenantID)
+func (q *Queries) ListActiveAPIKeysByTenantID(ctx context.Context, tenantID pgtype.UUID) ([]ApiKey, error) {
+	rows, err := q.db.Query(ctx, listActiveAPIKeysByTenantID, tenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -207,50 +250,7 @@ func (q *Queries) ListActiveApiKeysByTenantID(ctx context.Context, tenantID pgty
 	return items, nil
 }
 
-const listApiKeysByTenantID = `-- name: ListApiKeysByTenantID :many
-SELECT
-        id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
-FROM
-        api_keys
-WHERE
-        tenant_id = $1
-ORDER BY
-        created_at DESC,
-        id DESC
-`
-
-func (q *Queries) ListApiKeysByTenantID(ctx context.Context, tenantID pgtype.UUID) ([]ApiKey, error) {
-	rows, err := q.db.Query(ctx, listApiKeysByTenantID, tenantID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ApiKey
-	for rows.Next() {
-		var i ApiKey
-		if err := rows.Scan(
-			&i.ID,
-			&i.TenantID,
-			&i.Name,
-			&i.Scopes,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.LastUsedAt,
-			&i.ExpiresAt,
-			&i.TokenID,
-			&i.HashedSecret,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listExpiredApiKeys = `-- name: ListExpiredApiKeys :many
+const listExpiredAPIKeys = `-- name: ListExpiredAPIKeys :many
 SELECT
         id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 FROM
@@ -262,8 +262,8 @@ ORDER BY
         expires_at DESC
 `
 
-func (q *Queries) ListExpiredApiKeys(ctx context.Context) ([]ApiKey, error) {
-	rows, err := q.db.Query(ctx, listExpiredApiKeys)
+func (q *Queries) ListExpiredAPIKeys(ctx context.Context) ([]ApiKey, error) {
+	rows, err := q.db.Query(ctx, listExpiredAPIKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -293,7 +293,7 @@ func (q *Queries) ListExpiredApiKeys(ctx context.Context) ([]ApiKey, error) {
 	return items, nil
 }
 
-const listStaleApiKeys = `-- name: ListStaleApiKeys :many
+const listStaleAPIKeys = `-- name: ListStaleAPIKeys :many
 SELECT
         id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 FROM
@@ -305,8 +305,8 @@ ORDER BY
         last_used_at ASC NULLS FIRST
 `
 
-func (q *Queries) ListStaleApiKeys(ctx context.Context) ([]ApiKey, error) {
-	rows, err := q.db.Query(ctx, listStaleApiKeys)
+func (q *Queries) ListStaleAPIKeys(ctx context.Context) ([]ApiKey, error) {
+	rows, err := q.db.Query(ctx, listStaleAPIKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -336,7 +336,7 @@ func (q *Queries) ListStaleApiKeys(ctx context.Context) ([]ApiKey, error) {
 	return items, nil
 }
 
-const setApiKeyExpiration = `-- name: SetApiKeyExpiration :one
+const setAPIKeyExpiration = `-- name: SetAPIKeyExpiration :one
 UPDATE
         api_keys
 SET
@@ -347,13 +347,13 @@ RETURNING
         id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 `
 
-type SetApiKeyExpirationParams struct {
+type SetAPIKeyExpirationParams struct {
 	ExpiresAt pgtype.Timestamptz
 	ID        pgtype.UUID
 }
 
-func (q *Queries) SetApiKeyExpiration(ctx context.Context, arg SetApiKeyExpirationParams) (ApiKey, error) {
-	row := q.db.QueryRow(ctx, setApiKeyExpiration, arg.ExpiresAt, arg.ID)
+func (q *Queries) SetAPIKeyExpiration(ctx context.Context, arg SetAPIKeyExpirationParams) (ApiKey, error) {
+	row := q.db.QueryRow(ctx, setAPIKeyExpiration, arg.ExpiresAt, arg.ID)
 	var i ApiKey
 	err := row.Scan(
 		&i.ID,
@@ -370,7 +370,7 @@ func (q *Queries) SetApiKeyExpiration(ctx context.Context, arg SetApiKeyExpirati
 	return i, err
 }
 
-const updateApiKeyName = `-- name: UpdateApiKeyName :one
+const updateAPIKeyName = `-- name: UpdateAPIKeyName :one
 UPDATE
         api_keys
 SET
@@ -381,13 +381,13 @@ RETURNING
         id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 `
 
-type UpdateApiKeyNameParams struct {
+type UpdateAPIKeyNameParams struct {
 	Name string
 	ID   pgtype.UUID
 }
 
-func (q *Queries) UpdateApiKeyName(ctx context.Context, arg UpdateApiKeyNameParams) (ApiKey, error) {
-	row := q.db.QueryRow(ctx, updateApiKeyName, arg.Name, arg.ID)
+func (q *Queries) UpdateAPIKeyName(ctx context.Context, arg UpdateAPIKeyNameParams) (ApiKey, error) {
+	row := q.db.QueryRow(ctx, updateAPIKeyName, arg.Name, arg.ID)
 	var i ApiKey
 	err := row.Scan(
 		&i.ID,
@@ -404,7 +404,7 @@ func (q *Queries) UpdateApiKeyName(ctx context.Context, arg UpdateApiKeyNamePara
 	return i, err
 }
 
-const updateApiKeyScopes = `-- name: UpdateApiKeyScopes :one
+const updateAPIKeyScopes = `-- name: UpdateAPIKeyScopes :one
 UPDATE
         api_keys
 SET
@@ -415,13 +415,13 @@ RETURNING
         id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 `
 
-type UpdateApiKeyScopesParams struct {
+type UpdateAPIKeyScopesParams struct {
 	Scopes []string
 	ID     pgtype.UUID
 }
 
-func (q *Queries) UpdateApiKeyScopes(ctx context.Context, arg UpdateApiKeyScopesParams) (ApiKey, error) {
-	row := q.db.QueryRow(ctx, updateApiKeyScopes, arg.Scopes, arg.ID)
+func (q *Queries) UpdateAPIKeyScopes(ctx context.Context, arg UpdateAPIKeyScopesParams) (ApiKey, error) {
+	row := q.db.QueryRow(ctx, updateAPIKeyScopes, arg.Scopes, arg.ID)
 	var i ApiKey
 	err := row.Scan(
 		&i.ID,

@@ -1,4 +1,4 @@
--- name: CreateApiKey :one
+-- name: CreateAPIKey :one
 INSERT INTO
         api_keys (tenant_id, name, token_id, hashed_secret, scopes)
 VALUES
@@ -6,7 +6,7 @@ VALUES
 RETURNING
         *;
 
--- name: GetApiKeyByID :one
+-- name: GetAPIKeyByID :one
 SELECT
         *
 FROM
@@ -14,7 +14,7 @@ FROM
 WHERE
         id = $1;
 
--- name: GetApiKeyByTokenId :one
+-- name: GetAPIKeyByTokenID :one
 SELECT
         *
 FROM
@@ -22,7 +22,7 @@ FROM
 WHERE
         token_id = $1;
 
--- name: ListApiKeysByTenantID :many
+-- name: ListAPIKeysByTenantID :many
 SELECT
         *
 FROM
@@ -33,7 +33,7 @@ ORDER BY
         created_at DESC,
         id DESC;
 
--- name: ListActiveApiKeysByTenantID :many
+-- name: ListActiveAPIKeysByTenantID :many
 SELECT
         *
 FROM
@@ -45,7 +45,7 @@ ORDER BY
         created_at DESC,
         id DESC;
 
--- name: ListExpiredApiKeys :many
+-- name: ListExpiredAPIKeys :many
 SELECT
         *
 FROM
@@ -56,7 +56,7 @@ WHERE
 ORDER BY
         expires_at DESC;
 
--- name: UpdateApiKeyName :one
+-- name: UpdateAPIKeyName :one
 UPDATE
         api_keys
 SET
@@ -66,7 +66,7 @@ WHERE
 RETURNING
         *;
 
--- name: UpdateApiKeyScopes :one
+-- name: UpdateAPIKeyScopes :one
 UPDATE
         api_keys
 SET
@@ -85,7 +85,7 @@ WHERE
         id = $1
         AND (last_used_at IS NULL OR last_used_at < NOW() - INTERVAL '5 minutes');
 
--- name: SetApiKeyExpiration :one
+-- name: SetAPIKeyExpiration :one
 UPDATE
         api_keys
 SET
@@ -95,19 +95,19 @@ WHERE
 RETURNING
         *;
 
--- name: DeleteApiKey :exec
+-- name: DeleteAPIKey :exec
 DELETE FROM
         api_keys
 WHERE
         id = $1;
 
--- name: DeleteApiKeysByTenantID :exec
+-- name: DeleteAPIKeysByTenantID :exec
 DELETE FROM
         api_keys
 WHERE
         tenant_id = $1;
 
--- name: CountApiKeysByTenantID :one
+-- name: CountAPIKeysByTenantID :one
 SELECT
         COUNT(*)
 FROM
@@ -115,7 +115,7 @@ FROM
 WHERE
         tenant_id = $1;
 
--- name: CountActiveApiKeysByTenantID :one
+-- name: CountActiveAPIKeysByTenantID :one
 SELECT
         COUNT(*)
 FROM
@@ -124,7 +124,7 @@ WHERE
         tenant_id = $1
         AND (expires_at IS NULL OR expires_at > NOW());
 
--- name: ListStaleApiKeys :many
+-- name: ListStaleAPIKeys :many
 SELECT
         *
 FROM

@@ -4,6 +4,7 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3filter"
 )
@@ -27,17 +28,17 @@ const (
 
 // NewMissingKeyError returns an AuthError for missing API keys.
 func NewMissingKeyError() *AuthError {
-	return &AuthError{Code: MissingAPIKey, Message: "API key is missing", Status: 401}
+	return &AuthError{Code: MissingAPIKey, Message: "API key is missing", Status: http.StatusUnauthorized}
 }
 
 // NewInvalidKeyError returns an AuthError for invalid API keys.
 func NewInvalidKeyError() *AuthError {
-	return &AuthError{Code: InvalidAPIKey, Message: "API key is invalid", Status: 401}
+	return &AuthError{Code: InvalidAPIKey, Message: "API key is invalid", Status: http.StatusUnauthorized}
 }
 
 // NewExpiredKeyError returns an AuthError for expired API keys.
 func NewExpiredKeyError() *AuthError {
-	return &AuthError{Code: ExpiredAPIKey, Message: "API key is expired", Status: 403}
+	return &AuthError{Code: ExpiredAPIKey, Message: "API key is expired", Status: http.StatusForbidden}
 }
 
 // Context key for storing the validated APIKey in request context

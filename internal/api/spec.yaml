@@ -205,7 +205,7 @@ paths:
     # API Key operations
     /v1/apikey/create_key:
         post:
-            operationId: createApiKey
+            operationId: createAPIKey
             tags: [apikeys]
             summary: Generate a new API key
             description: Create a new API key for a tenant

@@ -14,6 +14,9 @@ type TenantHandlers struct { //nolint:revive // name is intentional for clarity
 	service *tenant.Service
 }
 
+// Default pagination limit when the client does not specify one.
+const defaultListLimit = int32(10)
+
 // NewTenantHandlers creates a TenantHandlers backed by the given service.
 func NewTenantHandlers(service *tenant.Service) *TenantHandlers { //nolint:revive // name is intentional for clarity
 	return &TenantHandlers{
@@ -24,7 +27,7 @@ func NewTenantHandlers(service *tenant.Service) *TenantHandlers { //nolint:reviv
 // CreateTenant handles tenant creation requests.
 func (h *TenantHandlers) CreateTenant(ctx context.Context, request CreateTenantRequestObject) (CreateTenantResponseObject, error) {
 	if request.Body == nil {
-		return CreateTenant400JSONResponse{BadRequestJSONResponse{Error: "missing request body"}}, nil
+		return CreateTenant400JSONResponse{BadRequestJSONResponse{Error: errMissingRequestBody}}, nil
 	}
 
 	domainTenant, err := h.service.CreateTenant(ctx, request.Body.Name, string(request.Body.Email))
@@ -37,7 +40,7 @@ func (h *TenantHandlers) CreateTenant(ctx context.Context, request CreateTenantR
 
 // ListTenants handles paginated tenant listing requests.
 func (h *TenantHandlers) ListTenants(ctx context.Context, request ListTenantsRequestObject) (ListTenantsResponseObject, error) {
-	limit := int32(10)
+	limit := defaultListLimit
 	offset := int32(0)
 
 	if request.Params.Limit != nil {
@@ -89,7 +92,7 @@ func (h *TenantHandlers) GetTenant(ctx context.Context, request GetTenantRequest
 // SetTenantStatus handles tenant status update requests.
 func (h *TenantHandlers) SetTenantStatus(ctx context.Context, request SetTenantStatusRequestObject) (SetTenantStatusResponseObject, error) {
 	if request.Body == nil {
-		return SetTenantStatus400JSONResponse{BadRequestJSONResponse{Error: "missing request body"}}, nil
+		return SetTenantStatus400JSONResponse{BadRequestJSONResponse{Error: errMissingRequestBody}}, nil
 	}
 
 	domainStatus := tenant.Status(request.Body.Status)

@@ -20,12 +20,10 @@ func NewAPIKeyHandlers(service *apikey.Service) *APIKeyHandlers { //nolint:reviv
 	}
 }
 
-// CreateApiKey handles API key creation requests.
-//
-//nolint:revive // var-naming: name matches generated StrictServerInterface
-func (h *APIKeyHandlers) CreateApiKey(ctx context.Context, request CreateApiKeyRequestObject) (CreateApiKeyResponseObject, error) {
+// CreateAPIKey handles API key creation requests.
+func (h *APIKeyHandlers) CreateAPIKey(ctx context.Context, request CreateAPIKeyRequestObject) (CreateAPIKeyResponseObject, error) {
 	if request.Body == nil {
-		return CreateApiKey400JSONResponse{BadRequestJSONResponse{Error: "missing request body"}}, nil
+		return CreateAPIKey400JSONResponse{BadRequestJSONResponse{Error: errMissingRequestBody}}, nil
 	}
 
 	scopes := []string{}
@@ -40,10 +38,10 @@ func (h *APIKeyHandlers) CreateApiKey(ctx context.Context, request CreateApiKeyR
 		scopes,
 	)
 	if err != nil {
-		return CreateApiKey400JSONResponse{BadRequestJSONResponse{Error: err.Error()}}, nil
+		return CreateAPIKey400JSONResponse{BadRequestJSONResponse{Error: err.Error()}}, nil
 	}
 
-	return CreateApiKey201JSONResponse(h.domainAPIKeyToResponse(secret, apiKey)), nil
+	return CreateAPIKey201JSONResponse(h.domainAPIKeyToResponse(secret, apiKey)), nil
 }
 
 // domainAPIKeyToResponse converts domain apikey.APIKey to API CreateAPIKeyResponse.

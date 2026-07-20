@@ -9,6 +9,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// Well-known environment names.
+const (
+	EnvDevelopment = "development"
+	EnvProduction  = "production"
+)
+
 // ServerEnv holds HTTP server configuration from environment variables.
 type ServerEnv struct {
 	ServerAddress      string `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`

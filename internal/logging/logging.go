@@ -4,12 +4,14 @@ package logging
 import (
 	"log/slog"
 	"os"
+
+	"github.com/c-mierez/godec/internal/config"
 )
 
 // Setup initializes the global slog logger with JSON output.
 func Setup(env string) {
 	level := slog.LevelInfo
-	if env == "development" {
+	if env == config.EnvDevelopment {
 		level = slog.LevelDebug
 	}
 

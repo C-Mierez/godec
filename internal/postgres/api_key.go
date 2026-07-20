@@ -21,7 +21,7 @@ func NewAPIKeyStore(queries *db.Queries) *APIKeyStore {
 
 // CreateAPIKey inserts a new API key and returns the persisted record.
 func (s *APIKeyStore) CreateAPIKey(ctx context.Context, tenantID uuid.UUID, name, tokenID, hashedSecret string, scopes []string) (*apikey.APIKey, error) {
-	row, err := s.queries.CreateApiKey(ctx, db.CreateApiKeyParams{
+	row, err := s.queries.CreateAPIKey(ctx, db.CreateAPIKeyParams{
 		TenantID:     db.UUIDToPGUUID(tenantID),
 		Name:         name,
 		TokenID:      tokenID,
@@ -38,7 +38,7 @@ func (s *APIKeyStore) CreateAPIKey(ctx context.Context, tenantID uuid.UUID, name
 
 // GetAPIKeyByTokenID looks up an API key by its token identifier.
 func (s *APIKeyStore) GetAPIKeyByTokenID(ctx context.Context, tokenID string) (*apikey.APIKey, error) {
-	row, err := s.queries.GetApiKeyByTokenId(ctx, tokenID)
+	row, err := s.queries.GetAPIKeyByTokenID(ctx, tokenID)
 	if err != nil {
 		return nil, err
 	}

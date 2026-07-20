@@ -207,8 +207,8 @@ type ListTenantsParams struct {
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
-// CreateApiKeyJSONRequestBody defines body for CreateApiKey for application/json ContentType.
-type CreateApiKeyJSONRequestBody = CreateAPIKeyRequest
+// CreateAPIKeyJSONRequestBody defines body for CreateAPIKey for application/json ContentType.
+type CreateAPIKeyJSONRequestBody = CreateAPIKeyRequest
 
 // GetMediaUploadURLJSONRequestBody defines body for GetMediaUploadURL for application/json ContentType.
 type GetMediaUploadURLJSONRequestBody = GetMediaUploadURLJSONBody
@@ -235,7 +235,7 @@ type ServerInterface interface {
 	GetOpenAPISpec(ctx *echo.Context) error
 	// Generate a new API key
 	// (POST /v1/apikey/create_key)
-	CreateApiKey(ctx *echo.Context) error
+	CreateAPIKey(ctx *echo.Context) error
 	// Get media upload URL
 	// (POST /v1/media/upload-url)
 	GetMediaUploadURL(ctx *echo.Context) error
@@ -294,12 +294,12 @@ func (w *ServerInterfaceWrapper) GetOpenAPISpec(ctx *echo.Context) error {
 	return err
 }
 
-// CreateApiKey converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateApiKey(ctx *echo.Context) error {
+// CreateAPIKey converts echo context to params.
+func (w *ServerInterfaceWrapper) CreateAPIKey(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.CreateApiKey(ctx)
+	err = w.Handler.CreateAPIKey(ctx)
 	return err
 }
 
@@ -431,7 +431,7 @@ func RegisterHandlersWithOptions(router EchoRouter, si ServerInterface, options 
 	router.GET(options.BaseURL+"/live", wrapper.Liveness, options.OperationMiddlewares["liveness"]...)
 	router.GET(options.BaseURL+"/ready", wrapper.Readiness, options.OperationMiddlewares["readiness"]...)
 	router.GET(options.BaseURL+"/spec.yaml", wrapper.GetOpenAPISpec, options.OperationMiddlewares["getOpenAPISpec"]...)
-	router.POST(options.BaseURL+"/v1/apikey/create_key", wrapper.CreateApiKey, options.OperationMiddlewares["createApiKey"]...)
+	router.POST(options.BaseURL+"/v1/apikey/create_key", wrapper.CreateAPIKey, options.OperationMiddlewares["createAPIKey"]...)
 	router.POST(options.BaseURL+"/v1/media/upload-url", wrapper.GetMediaUploadURL, options.OperationMiddlewares["getMediaUploadURL"]...)
 	router.GET(options.BaseURL+"/v1/tenants", wrapper.ListTenants, options.OperationMiddlewares["listTenants"]...)
 	router.POST(options.BaseURL+"/v1/tenants", wrapper.CreateTenant, options.OperationMiddlewares["createTenant"]...)
@@ -560,17 +560,17 @@ func (response GetOpenAPISpec200ApplicationyamlResponse) VisitGetOpenAPISpecResp
 	return err
 }
 
-type CreateApiKeyRequestObject struct {
-	Body *CreateApiKeyJSONRequestBody
+type CreateAPIKeyRequestObject struct {
+	Body *CreateAPIKeyJSONRequestBody
 }
 
-type CreateApiKeyResponseObject interface {
-	VisitCreateApiKeyResponse(w http.ResponseWriter) error
+type CreateAPIKeyResponseObject interface {
+	VisitCreateAPIKeyResponse(w http.ResponseWriter) error
 }
 
-type CreateApiKey201JSONResponse CreateAPIKeyResponse
+type CreateAPIKey201JSONResponse CreateAPIKeyResponse
 
-func (response CreateApiKey201JSONResponse) VisitCreateApiKeyResponse(w http.ResponseWriter) error {
+func (response CreateAPIKey201JSONResponse) VisitCreateAPIKeyResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -582,9 +582,9 @@ func (response CreateApiKey201JSONResponse) VisitCreateApiKeyResponse(w http.Res
 	return err
 }
 
-type CreateApiKey400JSONResponse struct{ BadRequestJSONResponse }
+type CreateAPIKey400JSONResponse struct{ BadRequestJSONResponse }
 
-func (response CreateApiKey400JSONResponse) VisitCreateApiKeyResponse(w http.ResponseWriter) error {
+func (response CreateAPIKey400JSONResponse) VisitCreateAPIKeyResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -596,9 +596,9 @@ func (response CreateApiKey400JSONResponse) VisitCreateApiKeyResponse(w http.Res
 	return err
 }
 
-type CreateApiKey500JSONResponse struct{ InternalErrorJSONResponse }
+type CreateAPIKey500JSONResponse struct{ InternalErrorJSONResponse }
 
-func (response CreateApiKey500JSONResponse) VisitCreateApiKeyResponse(w http.ResponseWriter) error {
+func (response CreateAPIKey500JSONResponse) VisitCreateAPIKeyResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -919,7 +919,7 @@ type StrictServerInterface interface {
 	GetOpenAPISpec(ctx context.Context, request GetOpenAPISpecRequestObject) (GetOpenAPISpecResponseObject, error)
 	// Generate a new API key
 	// (POST /v1/apikey/create_key)
-	CreateApiKey(ctx context.Context, request CreateApiKeyRequestObject) (CreateApiKeyResponseObject, error)
+	CreateAPIKey(ctx context.Context, request CreateAPIKeyRequestObject) (CreateAPIKeyResponseObject, error)
 	// Get media upload URL
 	// (POST /v1/media/upload-url)
 	GetMediaUploadURL(ctx context.Context, request GetMediaUploadURLRequestObject) (GetMediaUploadURLResponseObject, error)
@@ -1041,29 +1041,29 @@ func (sh *strictHandler) GetOpenAPISpec(ctx *echo.Context) error {
 	return nil
 }
 
-// CreateApiKey operation middleware
-func (sh *strictHandler) CreateApiKey(ctx *echo.Context) error {
-	var request CreateApiKeyRequestObject
+// CreateAPIKey operation middleware
+func (sh *strictHandler) CreateAPIKey(ctx *echo.Context) error {
+	var request CreateAPIKeyRequestObject
 
-	var body CreateApiKeyJSONRequestBody
+	var body CreateAPIKeyJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
 		return err
 	}
 	request.Body = &body
 
 	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.CreateApiKey(ctx.Request().Context(), request.(CreateApiKeyRequestObject))
+		return sh.ssi.CreateAPIKey(ctx.Request().Context(), request.(CreateAPIKeyRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "CreateApiKey")
+		handler = middleware(handler, "CreateAPIKey")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(CreateApiKeyResponseObject); ok {
-		return validResponse.VisitCreateApiKeyResponse(ctx.Response())
+	} else if validResponse, ok := response.(CreateAPIKeyResponseObject); ok {
+		return validResponse.VisitCreateAPIKeyResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}

@@ -24,6 +24,10 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
+// gracefulShutdownTimeout is how long the server waits for in-flight requests
+// to complete before forcefully shutting down.
+const gracefulShutdownTimeout = 10 * time.Second
+
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
@@ -122,7 +126,7 @@ func main() {
 
 	sc := echo.StartConfig{
 		Address:         cfg.Server.ServerAddress,
-		GracefulTimeout: 10 * time.Second,
+		GracefulTimeout: gracefulShutdownTimeout,
 	}
 
 	if err := sc.Start(serverCtx, e); err != nil {

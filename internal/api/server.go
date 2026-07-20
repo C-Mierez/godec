@@ -48,11 +48,9 @@ func (s *Server) Readiness(ctx context.Context, request ReadinessRequestObject) 
 	return s.health.Readiness(ctx, request)
 }
 
-// CreateApiKey delegates to apikey handlers.
-//
-//nolint:revive // var-naming: name matches generated StrictServerInterface
-func (s *Server) CreateApiKey(ctx context.Context, request CreateApiKeyRequestObject) (CreateApiKeyResponseObject, error) {
-	return s.apikeys.CreateApiKey(ctx, request)
+// CreateAPIKey delegates to apikey handlers.
+func (s *Server) CreateAPIKey(ctx context.Context, request CreateAPIKeyRequestObject) (CreateAPIKeyResponseObject, error) {
+	return s.apikeys.CreateAPIKey(ctx, request)
 }
 
 // GetMediaUploadURL delegates to media handlers.
