@@ -519,6 +519,20 @@ func (response Readiness200JSONResponse) VisitReadinessResponse(w http.ResponseW
 	return err
 }
 
+type Readiness503JSONResponse HealthResponse
+
+func (response Readiness503JSONResponse) VisitReadinessResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetOpenAPISpecRequestObject struct {
 }
 

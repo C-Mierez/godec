@@ -37,10 +37,16 @@ paths:
             operationId: readiness
             tags: [health]
             summary: Readiness probe
-            description: Returns 200 if the service is ready to accept requests
+            description: Returns 200 if the service is ready to accept requests, 503 if not
             responses:
                 "200":
                     description: Service is ready
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HealthResponse"
+                "503":
+                    description: Service is not ready
                     content:
                         application/json:
                             schema:
@@ -383,7 +389,7 @@ components:
                 status:
                     type: string
                     description: Health status
-                    example: "ok"
+                    example: "OK"
                 timestamp:
                     type: string
                     description: Timestamp of the check

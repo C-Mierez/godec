@@ -18,11 +18,11 @@ type Server struct {
 }
 
 // NewServer creates a Server backed by the given tenant and API key services.
-func NewServer(tenantService *tenant.Service, apiKeyService *apikey.Service) *Server {
+func NewServer(tenantService *tenant.Service, apiKeyService *apikey.Service, healthCheckers map[string]Pinger) *Server {
 	return &Server{
 		tenants:       NewTenantHandlers(tenantService),
 		apikeys:       NewAPIKeyHandlers(apiKeyService),
-		health:        NewHealthHandlers(),
+		health:        NewHealthHandlers(healthCheckers),
 		media:         NewMediaHandlers(),
 		documentation: NewDocumentationHandlers(),
 	}

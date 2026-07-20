@@ -109,7 +109,10 @@ func main() {
 	e.Use(echovalidator.OapiRequestValidatorWithOptions(swagger, validatorOptions))
 
 	// Create API server and register handlers
-	apiServer := api.NewServer(tenantService, apiKeyService)
+	healthCheckers := map[string]api.Pinger{
+		api.CheckerDatabase: pool,
+	}
+	apiServer := api.NewServer(tenantService, apiKeyService, healthCheckers)
 	strictHandler := api.NewStrictHandler(apiServer, nil)
 	api.RegisterHandlers(e, strictHandler)
 
