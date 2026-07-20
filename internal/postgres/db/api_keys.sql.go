@@ -46,25 +46,27 @@ func (q *Queries) CountApiKeysByTenantID(ctx context.Context, tenantID pgtype.UU
 
 const createApiKey = `-- name: CreateApiKey :one
 INSERT INTO
-        api_keys (tenant_id, name, hashed_key, scopes)
+        api_keys (tenant_id, name, token_id, hashed_secret, scopes)
 VALUES
-        ($1, $2, $3, $4)
+        ($1, $2, $3, $4, $5)
 RETURNING
-        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 `
 
 type CreateApiKeyParams struct {
-	TenantID  pgtype.UUID
-	Name      string
-	HashedKey string
-	Scopes    []string
+	TenantID     pgtype.UUID
+	Name         string
+	TokenID      string
+	HashedSecret string
+	Scopes       []string
 }
 
 func (q *Queries) CreateApiKey(ctx context.Context, arg CreateApiKeyParams) (ApiKey, error) {
 	row := q.db.QueryRow(ctx, createApiKey,
 		arg.TenantID,
 		arg.Name,
-		arg.HashedKey,
+		arg.TokenID,
+		arg.HashedSecret,
 		arg.Scopes,
 	)
 	var i ApiKey
@@ -72,12 +74,13 @@ func (q *Queries) CreateApiKey(ctx context.Context, arg CreateApiKeyParams) (Api
 		&i.ID,
 		&i.TenantID,
 		&i.Name,
-		&i.HashedKey,
 		&i.Scopes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastUsedAt,
 		&i.ExpiresAt,
+		&i.TokenID,
+		&i.HashedSecret,
 	)
 	return i, err
 }
@@ -106,35 +109,9 @@ func (q *Queries) DeleteApiKeysByTenantID(ctx context.Context, tenantID pgtype.U
 	return err
 }
 
-const getApiKeyByHashedKey = `-- name: GetApiKeyByHashedKey :one
-SELECT
-        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
-FROM
-        api_keys
-WHERE
-        hashed_key = $1
-`
-
-func (q *Queries) GetApiKeyByHashedKey(ctx context.Context, hashedKey string) (ApiKey, error) {
-	row := q.db.QueryRow(ctx, getApiKeyByHashedKey, hashedKey)
-	var i ApiKey
-	err := row.Scan(
-		&i.ID,
-		&i.TenantID,
-		&i.Name,
-		&i.HashedKey,
-		&i.Scopes,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.LastUsedAt,
-		&i.ExpiresAt,
-	)
-	return i, err
-}
-
 const getApiKeyByID = `-- name: GetApiKeyByID :one
 SELECT
-        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 FROM
         api_keys
 WHERE
@@ -148,19 +125,47 @@ func (q *Queries) GetApiKeyByID(ctx context.Context, id pgtype.UUID) (ApiKey, er
 		&i.ID,
 		&i.TenantID,
 		&i.Name,
-		&i.HashedKey,
 		&i.Scopes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastUsedAt,
 		&i.ExpiresAt,
+		&i.TokenID,
+		&i.HashedSecret,
+	)
+	return i, err
+}
+
+const getApiKeyByTokenId = `-- name: GetApiKeyByTokenId :one
+SELECT
+        id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
+FROM
+        api_keys
+WHERE
+        token_id = $1
+`
+
+func (q *Queries) GetApiKeyByTokenId(ctx context.Context, tokenID string) (ApiKey, error) {
+	row := q.db.QueryRow(ctx, getApiKeyByTokenId, tokenID)
+	var i ApiKey
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Name,
+		&i.Scopes,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LastUsedAt,
+		&i.ExpiresAt,
+		&i.TokenID,
+		&i.HashedSecret,
 	)
 	return i, err
 }
 
 const listActiveApiKeysByTenantID = `-- name: ListActiveApiKeysByTenantID :many
 SELECT
-        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 FROM
         api_keys
 WHERE
@@ -184,12 +189,13 @@ func (q *Queries) ListActiveApiKeysByTenantID(ctx context.Context, tenantID pgty
 			&i.ID,
 			&i.TenantID,
 			&i.Name,
-			&i.HashedKey,
 			&i.Scopes,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.LastUsedAt,
 			&i.ExpiresAt,
+			&i.TokenID,
+			&i.HashedSecret,
 		); err != nil {
 			return nil, err
 		}
@@ -203,7 +209,7 @@ func (q *Queries) ListActiveApiKeysByTenantID(ctx context.Context, tenantID pgty
 
 const listApiKeysByTenantID = `-- name: ListApiKeysByTenantID :many
 SELECT
-        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 FROM
         api_keys
 WHERE
@@ -226,12 +232,13 @@ func (q *Queries) ListApiKeysByTenantID(ctx context.Context, tenantID pgtype.UUI
 			&i.ID,
 			&i.TenantID,
 			&i.Name,
-			&i.HashedKey,
 			&i.Scopes,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.LastUsedAt,
 			&i.ExpiresAt,
+			&i.TokenID,
+			&i.HashedSecret,
 		); err != nil {
 			return nil, err
 		}
@@ -245,7 +252,7 @@ func (q *Queries) ListApiKeysByTenantID(ctx context.Context, tenantID pgtype.UUI
 
 const listExpiredApiKeys = `-- name: ListExpiredApiKeys :many
 SELECT
-        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 FROM
         api_keys
 WHERE
@@ -268,12 +275,13 @@ func (q *Queries) ListExpiredApiKeys(ctx context.Context) ([]ApiKey, error) {
 			&i.ID,
 			&i.TenantID,
 			&i.Name,
-			&i.HashedKey,
 			&i.Scopes,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.LastUsedAt,
 			&i.ExpiresAt,
+			&i.TokenID,
+			&i.HashedSecret,
 		); err != nil {
 			return nil, err
 		}
@@ -287,7 +295,7 @@ func (q *Queries) ListExpiredApiKeys(ctx context.Context) ([]ApiKey, error) {
 
 const listStaleApiKeys = `-- name: ListStaleApiKeys :many
 SELECT
-        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 FROM
         api_keys
 WHERE
@@ -310,12 +318,13 @@ func (q *Queries) ListStaleApiKeys(ctx context.Context) ([]ApiKey, error) {
 			&i.ID,
 			&i.TenantID,
 			&i.Name,
-			&i.HashedKey,
 			&i.Scopes,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.LastUsedAt,
 			&i.ExpiresAt,
+			&i.TokenID,
+			&i.HashedSecret,
 		); err != nil {
 			return nil, err
 		}
@@ -335,7 +344,7 @@ SET
 WHERE
         id = $2
 RETURNING
-        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 `
 
 type SetApiKeyExpirationParams struct {
@@ -350,12 +359,13 @@ func (q *Queries) SetApiKeyExpiration(ctx context.Context, arg SetApiKeyExpirati
 		&i.ID,
 		&i.TenantID,
 		&i.Name,
-		&i.HashedKey,
 		&i.Scopes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastUsedAt,
 		&i.ExpiresAt,
+		&i.TokenID,
+		&i.HashedSecret,
 	)
 	return i, err
 }
@@ -368,7 +378,7 @@ SET
 WHERE
         id = $2
 RETURNING
-        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 `
 
 type UpdateApiKeyNameParams struct {
@@ -383,12 +393,13 @@ func (q *Queries) UpdateApiKeyName(ctx context.Context, arg UpdateApiKeyNamePara
 		&i.ID,
 		&i.TenantID,
 		&i.Name,
-		&i.HashedKey,
 		&i.Scopes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastUsedAt,
 		&i.ExpiresAt,
+		&i.TokenID,
+		&i.HashedSecret,
 	)
 	return i, err
 }
@@ -401,7 +412,7 @@ SET
 WHERE
         id = $2
 RETURNING
-        id, tenant_id, name, hashed_key, scopes, created_at, updated_at, last_used_at, expires_at
+        id, tenant_id, name, scopes, created_at, updated_at, last_used_at, expires_at, token_id, hashed_secret
 `
 
 type UpdateApiKeyScopesParams struct {
@@ -416,12 +427,13 @@ func (q *Queries) UpdateApiKeyScopes(ctx context.Context, arg UpdateApiKeyScopes
 		&i.ID,
 		&i.TenantID,
 		&i.Name,
-		&i.HashedKey,
 		&i.Scopes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastUsedAt,
 		&i.ExpiresAt,
+		&i.TokenID,
+		&i.HashedSecret,
 	)
 	return i, err
 }

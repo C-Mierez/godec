@@ -55,7 +55,7 @@ dump:
 	@echo "Dumping schema to $(SCHEMA_FILE)"
 	@mkdir -p $(dir $(SCHEMA_FILE))
 	@if [ -z "$(DATABASE_URL)" ]; then echo "DATABASE_URL is not set"; exit 1; fi
-	$(PG_DUMP) --schema-only --schema=public --exclude-table=goose_db --no-owner --no-privileges --no-comments --dbname="$(DATABASE_URL)" \
+	$(PG_DUMP) --schema-only --schema=public --exclude-table=goose_db_version --no-owner --no-privileges --no-comments --dbname="$(DATABASE_URL)" \
 		| grep -v '^\\\\' \
 		> "$(SCHEMA_FILE)"
 

@@ -11,15 +11,17 @@ import (
 )
 
 type stubAPIKeyValidator struct {
-	called bool
-	key    string
-	apiKey *apikey.APIKey
-	err    error
+	called   bool
+	tokenID  string
+	secret   string
+	apiKey   *apikey.APIKey
+	err      error
 }
 
-func (s *stubAPIKeyValidator) ValidateAPIKey(_ context.Context, key string) (*apikey.APIKey, error) {
+func (s *stubAPIKeyValidator) ValidateAPIKey(_ context.Context, tokenID, secret string) (*apikey.APIKey, error) {
 	s.called = true
-	s.key = key
+	s.tokenID = tokenID
+	s.secret = secret
 	if s.err != nil {
 		return nil, s.err
 	}
@@ -41,7 +43,7 @@ func TestAPIKeyAuthenticator_IgnoresOtherSecuritySchemes(t *testing.T) {
 		t.Fatalf("expected nil error, got %v", err)
 	}
 	if validator.called {
-		t.Fatalf("validator should not be called for non-ApiKeyAuth schemes")
+		t.Fatalf("validator should not be called for non-BasicAuth schemes")
 	}
 }
 
@@ -51,7 +53,7 @@ func TestAPIKeyAuthenticator_ReturnsMissingKeyError(t *testing.T) {
 	req := httptest.NewRequestWithContext(context.Background(), "GET", "/media/upload-url", nil)
 
 	err := auth(context.Background(), &openapi3filter.AuthenticationInput{
-		SecuritySchemeName: "ApiKeyAuth",
+		SecuritySchemeName: "BasicAuth",
 		RequestValidationInput: &openapi3filter.RequestValidationInput{
 			Request: req,
 		},
@@ -70,10 +72,10 @@ func TestAPIKeyAuthenticator_ReturnsExpiredKeyError(t *testing.T) {
 	validator := &stubAPIKeyValidator{err: NewExpiredKeyError()}
 	auth := APIKeyAuthenticator(validator)
 	req := httptest.NewRequestWithContext(context.Background(), "GET", "/media/upload-url", nil)
-	req.Header.Set("X-API-Key", "some-key")
+	req.SetBasicAuth("gdk_testtoken", "sk_testsecret")
 
 	err := auth(context.Background(), &openapi3filter.AuthenticationInput{
-		SecuritySchemeName: "ApiKeyAuth",
+		SecuritySchemeName: "BasicAuth",
 		RequestValidationInput: &openapi3filter.RequestValidationInput{
 			Request: req,
 		},
@@ -96,9 +98,9 @@ func TestAPIKeyAuthenticator_SetsAPIKeyInRequestContext(t *testing.T) {
 	validator := &stubAPIKeyValidator{apiKey: validatedAPIKey}
 	auth := APIKeyAuthenticator(validator)
 	req := httptest.NewRequestWithContext(context.Background(), "GET", "/media/upload-url", nil)
-	req.Header.Set("X-API-Key", "plain-key")
+	req.SetBasicAuth("gdk_testtoken", "sk_testsecret")
 	input := &openapi3filter.AuthenticationInput{
-		SecuritySchemeName: "ApiKeyAuth",
+		SecuritySchemeName: "BasicAuth",
 		RequestValidationInput: &openapi3filter.RequestValidationInput{
 			Request: req,
 		},
@@ -111,8 +113,11 @@ func TestAPIKeyAuthenticator_SetsAPIKeyInRequestContext(t *testing.T) {
 	if !validator.called {
 		t.Fatalf("expected validator to be called")
 	}
-	if validator.key != "plain-key" {
-		t.Fatalf("expected validator key plain-key, got %s", validator.key)
+	if validator.tokenID != "gdk_testtoken" {
+		t.Fatalf("expected validator tokenID gdk_testtoken, got %s", validator.tokenID)
+	}
+	if validator.secret != "sk_testsecret" {
+		t.Fatalf("expected validator secret sk_testsecret, got %s", validator.secret)
 	}
 
 	stored, ok := input.RequestValidationInput.Request.Context().Value(ContextKeyAPIKey).(*apikey.APIKey)

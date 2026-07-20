@@ -17,14 +17,13 @@ func BuildGlobalMiddlewares(corsAllowedOrigins []string) []echo.MiddlewareFunc {
 				"DELETE",
 				"OPTIONS",
 			},
-			AllowHeaders: []string{
-				echo.HeaderAccept,
-				echo.HeaderAuthorization,
-				"X-API-Key",
-				echo.HeaderContentType,
-				echo.HeaderOrigin,
-				echo.HeaderXRequestedWith,
-			},
+		AllowHeaders: []string{
+			echo.HeaderAccept,
+			echo.HeaderAuthorization,
+			echo.HeaderContentType,
+			echo.HeaderOrigin,
+			echo.HeaderXRequestedWith,
+		},
 		}),
 	}
 }

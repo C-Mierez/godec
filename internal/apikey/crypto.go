@@ -10,27 +10,43 @@ import (
 )
 
 var (
-	entropyBytes   = 32
-	plainKeyPrefix = "sk_godec_"
+	tokenIDEntropyBytes = 16
+	secretEntropyBytes  = 32
+	tokenIDPrefix       = "gdk_"
+	secretPrefix        = "sk_"
 )
 
-func hashKey(plainKey string) string {
-	hash := sha256.Sum256([]byte(plainKey))
+// generateCredentials generates a split token ID and secret.
+// Returns: tokenID (public identifier), secret (private credential), hashedSecret (SHA-256 hash).
+func generateCredentials() (tokenID, secret, hashedSecret string, err error) {
+	// Generate token ID: gdk_ + base64(16 bytes)
+	tokenBytes := make([]byte, tokenIDEntropyBytes)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		return "", "", "", err
+	}
+	tokenID = tokenIDPrefix + base64.RawURLEncoding.EncodeToString(tokenBytes)
+
+	// Generate secret: sk_ + base64(32 bytes)
+	secretBytes := make([]byte, secretEntropyBytes)
+	if _, err := rand.Read(secretBytes); err != nil {
+		return "", "", "", err
+	}
+	secret = secretPrefix + base64.RawURLEncoding.EncodeToString(secretBytes)
+
+	// Hash the secret for storage
+	hashedSecret = hashSecret(secret)
+
+	return tokenID, secret, hashedSecret, nil
+}
+
+// hashSecret returns the SHA-256 hex digest of the given secret.
+func hashSecret(secret string) string {
+	hash := sha256.Sum256([]byte(secret))
 	return hex.EncodeToString(hash[:])
 }
 
-func generateKey() (plainKey string, hashedKey string, err error) {
-	bytes := make([]byte, entropyBytes)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", "", err
-	}
-
-	plainKey = plainKeyPrefix + base64.URLEncoding.EncodeToString(bytes)
-	hashedKey = hashKey(plainKey)
-
-	return plainKey, hashedKey, nil
-}
-
-func validateHashedKey(providedHash string, storedHash string) bool {
-	return subtle.ConstantTimeCompare([]byte(providedHash), []byte(storedHash)) == 1
+// validateSecretHash compares a computed hash against the stored hash using
+// constant-time comparison to prevent timing attacks.
+func validateSecretHash(computedHash, storedHash string) bool {
+	return subtle.ConstantTimeCompare([]byte(computedHash), []byte(storedHash)) == 1
 }

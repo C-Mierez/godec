@@ -8,8 +8,8 @@ import (
 
 // Store defines the persistence operations required by the API key service.
 type Store interface {
-	CreateAPIKey(ctx context.Context, tenantID uuid.UUID, name, hashedKey string, scopes []string) (*APIKey, error)
-	GetAPIKeyByHashedKey(ctx context.Context, hashedKey string) (*APIKey, error)
+	CreateAPIKey(ctx context.Context, tenantID uuid.UUID, name, tokenID, hashedSecret string, scopes []string) (*APIKey, error)
+	GetAPIKeyByTokenID(ctx context.Context, tokenID string) (*APIKey, error)
 }
 
 // Service implements API key generation and validation logic.
@@ -22,30 +22,34 @@ func NewService(store Store) *Service {
 	return &Service{store: store}
 }
 
-// GenerateAPIKey creates a new API key, returning the plain key and the persisted record.
-func (s *Service) GenerateAPIKey(ctx context.Context, tenantID uuid.UUID, name string, scopes []string) (string, *APIKey, error) {
-	plainKey, hashedKey, err := generateKey()
+// GenerateAPIKey creates a new API key with split credentials, returning the
+// token ID, secret (shown once), and the persisted record.
+func (s *Service) GenerateAPIKey(ctx context.Context, tenantID uuid.UUID, name string, scopes []string) (secret string, apiKey *APIKey, err error) {
+	tokenID, secret, hashedSecret, err := generateCredentials()
 	if err != nil {
 		return "", nil, err
 	}
 
-	apiKey, err := s.store.CreateAPIKey(ctx, tenantID, name, hashedKey, scopes)
+	apiKey, err = s.store.CreateAPIKey(ctx, tenantID, name, tokenID, hashedSecret, scopes)
 	if err != nil {
 		return "", nil, err
 	}
 
-	return plainKey, apiKey, nil
+	return secret, apiKey, nil
 }
 
-// ValidateAPIKey verifies a plain API key by hashing it and looking up the stored record.
-func (s *Service) ValidateAPIKey(ctx context.Context, plainKey string) (bool, *APIKey, error) {
-	hashedKey := hashKey(plainKey)
-
-	apiKey, err := s.store.GetAPIKeyByHashedKey(ctx, hashedKey)
+// ValidateAPIKey verifies credentials by looking up the token ID and comparing
+// the hashed secret.
+func (s *Service) ValidateAPIKey(ctx context.Context, tokenID, plainSecret string) (*APIKey, error) {
+	apiKey, err := s.store.GetAPIKeyByTokenID(ctx, tokenID)
 	if err != nil {
-		return false, nil, err
+		return nil, err
 	}
 
-	isValid := validateHashedKey(hashedKey, apiKey.HashedKey)
-	return isValid, apiKey, nil
+	computedHash := hashSecret(plainSecret)
+	if !validateSecretHash(computedHash, apiKey.HashedSecret) {
+		return nil, nil
+	}
+
+	return apiKey, nil
 }

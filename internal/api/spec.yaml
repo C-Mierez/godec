@@ -229,7 +229,7 @@ paths:
             summary: Get media upload URL
             description: Generate a pre-signed URL for uploading media
             security:
-                - ApiKeyAuth: []
+                - BasicAuth: []
             requestBody:
                 required: false
                 content:
@@ -252,10 +252,9 @@ paths:
 
 components:
     securitySchemes:
-        ApiKeyAuth:
-            type: apiKey
-            in: header
-            name: X-API-Key
+        BasicAuth:
+            type: http
+            scheme: basic
     schemas:
         # Domain models
         Tenant:
@@ -350,12 +349,16 @@ components:
 
         CreateAPIKeyResponse:
             type: object
-            required: [api_key, id, tenant_id, name]
+            required: [token_id, secret, id, tenant_id, name]
             properties:
-                api_key:
+                token_id:
                     type: string
-                    description: The actual API key (shown once, must be stored by user)
+                    description: Public token identifier (safe to log and display)
                     example: "gdk_xxx..."
+                secret:
+                    type: string
+                    description: Secret key (shown once, must be stored by user)
+                    example: "sk_xxx..."
                 id:
                     type: string
                     format: uuid

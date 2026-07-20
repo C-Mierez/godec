@@ -9,26 +9,26 @@ import (
 
 // APIKeyValidator defines the interface used by the OAPI authentication glue.
 type APIKeyValidator interface {
-	ValidateAPIKey(ctx context.Context, key string) (*apikey.APIKey, error)
+	ValidateAPIKey(ctx context.Context, tokenID, secret string) (*apikey.APIKey, error)
 }
 
-type apiKeyValidatorImpl struct {
-	svc *apikey.Service
+type apiKeyValidator struct {
+	apikeyService *apikey.Service
 }
 
 // NewAPIKeyValidator adapts the real apikey.Service to the APIKeyValidator
 // interface expected by the OAPI AuthenticationFunc.
 func NewAPIKeyValidator(svc *apikey.Service) APIKeyValidator {
-	return &apiKeyValidatorImpl{svc: svc}
+	return &apiKeyValidator{apikeyService: svc}
 }
 
-func (a *apiKeyValidatorImpl) ValidateAPIKey(ctx context.Context, key string) (*apikey.APIKey, error) {
-	isValid, ak, err := a.svc.ValidateAPIKey(ctx, key)
+func (a *apiKeyValidator) ValidateAPIKey(ctx context.Context, tokenID, secret string) (*apikey.APIKey, error) {
+	ak, err := a.apikeyService.ValidateAPIKey(ctx, tokenID, secret)
 	if err != nil {
 		return nil, NewInvalidKeyError()
 	}
 
-	if !isValid || ak == nil {
+	if ak == nil {
 		return nil, NewInvalidKeyError()
 	}
 

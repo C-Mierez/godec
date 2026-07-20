@@ -9,15 +9,16 @@ import (
 )
 
 type ApiKey struct {
-	ID         pgtype.UUID
-	TenantID   pgtype.UUID
-	Name       string
-	HashedKey  string
-	Scopes     []string
-	CreatedAt  pgtype.Timestamptz
-	UpdatedAt  pgtype.Timestamptz
-	LastUsedAt pgtype.Timestamptz
-	ExpiresAt  pgtype.Timestamptz
+	ID           pgtype.UUID
+	TenantID     pgtype.UUID
+	Name         string
+	Scopes       []string
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+	LastUsedAt   pgtype.Timestamptz
+	ExpiresAt    pgtype.Timestamptz
+	TokenID      string
+	HashedSecret string
 }
 
 type Tenant struct {

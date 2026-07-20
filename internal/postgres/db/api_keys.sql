@@ -1,8 +1,8 @@
 -- name: CreateApiKey :one
 INSERT INTO
-        api_keys (tenant_id, name, hashed_key, scopes)
+        api_keys (tenant_id, name, token_id, hashed_secret, scopes)
 VALUES
-        ($1, $2, $3, $4)
+        ($1, $2, $3, $4, $5)
 RETURNING
         *;
 
@@ -14,13 +14,13 @@ FROM
 WHERE
         id = $1;
 
--- name: GetApiKeyByHashedKey :one
+-- name: GetApiKeyByTokenId :one
 SELECT
         *
 FROM
         api_keys
 WHERE
-        hashed_key = $1;
+        token_id = $1;
 
 -- name: ListApiKeysByTenantID :many
 SELECT

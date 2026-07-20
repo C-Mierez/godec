@@ -8,15 +8,16 @@ import (
 
 func apiKeyFromRow(row db.ApiKey) apikey.APIKey {
 	return apikey.APIKey{
-		ID:         db.PgUUIDToUUID(row.ID),
-		TenantID:   db.PgUUIDToUUID(row.TenantID),
-		Name:       row.Name,
-		HashedKey:  row.HashedKey,
-		Scopes:     append([]string(nil), row.Scopes...),
-		CreatedAt:  db.PgTimestamptzToTime(row.CreatedAt),
-		UpdatedAt:  db.PgTimestamptzToTime(row.UpdatedAt),
-		LastUsedAt: db.PgTimestamptzToOptionalTime(row.LastUsedAt),
-		ExpiresAt:  db.PgTimestamptzToOptionalTime(row.ExpiresAt),
+		ID:           db.PgUUIDToUUID(row.ID),
+		TenantID:     db.PgUUIDToUUID(row.TenantID),
+		Name:         row.Name,
+		TokenID:      row.TokenID,
+		HashedSecret: row.HashedSecret,
+		Scopes:       append([]string(nil), row.Scopes...),
+		CreatedAt:    db.PgTimestamptzToTime(row.CreatedAt),
+		UpdatedAt:    db.PgTimestamptzToTime(row.UpdatedAt),
+		LastUsedAt:   db.PgTimestamptzToOptionalTime(row.LastUsedAt),
+		ExpiresAt:    db.PgTimestamptzToOptionalTime(row.ExpiresAt),
 	}
 }
 

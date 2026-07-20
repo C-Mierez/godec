@@ -33,7 +33,7 @@ func (h *APIKeyHandlers) CreateApiKey(ctx context.Context, request CreateApiKeyR
 		scopes = *request.Body.Scopes
 	}
 
-	plainKey, apiKey, err := h.service.GenerateAPIKey(
+	secret, apiKey, err := h.service.GenerateAPIKey(
 		ctx,
 		uuid.UUID(request.Body.TenantId),
 		request.Body.Name,
@@ -43,11 +43,11 @@ func (h *APIKeyHandlers) CreateApiKey(ctx context.Context, request CreateApiKeyR
 		return CreateApiKey400JSONResponse{BadRequestJSONResponse{Error: err.Error()}}, nil
 	}
 
-	return CreateApiKey201JSONResponse(h.domainAPIKeyToResponse(plainKey, apiKey)), nil
+	return CreateApiKey201JSONResponse(h.domainAPIKeyToResponse(secret, apiKey)), nil
 }
 
 // domainAPIKeyToResponse converts domain apikey.APIKey to API CreateAPIKeyResponse.
-func (h *APIKeyHandlers) domainAPIKeyToResponse(plainKey string, ak *apikey.APIKey) CreateAPIKeyResponse {
+func (h *APIKeyHandlers) domainAPIKeyToResponse(secret string, ak *apikey.APIKey) CreateAPIKeyResponse {
 	if ak == nil {
 		return CreateAPIKeyResponse{}
 	}
@@ -62,6 +62,7 @@ func (h *APIKeyHandlers) domainAPIKeyToResponse(plainKey string, ak *apikey.APIK
 		TenantId: types.UUID(ak.TenantID),
 		Name:     ak.Name,
 		Scopes:   &scopes,
-		ApiKey:   plainKey,
+		TokenId:  ak.TokenID,
+		Secret:   secret,
 	}
 }

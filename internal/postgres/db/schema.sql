@@ -3,7 +3,7 @@
 --
 
 
--- Dumped from database version 18.2 (0f4c1a9)
+-- Dumped from database version 18.4 (709c4c3)
 -- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
@@ -51,12 +51,13 @@ CREATE TABLE public.api_keys (
     id uuid DEFAULT uuidv7() NOT NULL,
     tenant_id uuid NOT NULL,
     name text NOT NULL,
-    hashed_key text NOT NULL,
     scopes text[] DEFAULT '{}'::text[] NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     last_used_at timestamp with time zone,
-    expires_at timestamp with time zone
+    expires_at timestamp with time zone,
+    token_id text DEFAULT ''::text NOT NULL,
+    hashed_secret text DEFAULT ''::text NOT NULL
 );
 
 
@@ -76,19 +77,19 @@ CREATE TABLE public.tenants (
 
 
 --
--- Name: api_keys api_keys_hashed_key_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.api_keys
-    ADD CONSTRAINT api_keys_hashed_key_key UNIQUE (hashed_key);
-
-
---
 -- Name: api_keys api_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.api_keys
     ADD CONSTRAINT api_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: api_keys api_keys_token_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.api_keys
+    ADD CONSTRAINT api_keys_token_id_key UNIQUE (token_id);
 
 
 --
@@ -100,17 +101,17 @@ ALTER TABLE ONLY public.tenants
 
 
 --
--- Name: idx_api_keys_hashed; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_api_keys_hashed ON public.api_keys USING btree (hashed_key);
-
-
---
 -- Name: idx_api_keys_tenant_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_api_keys_tenant_id ON public.api_keys USING btree (tenant_id);
+
+
+--
+-- Name: idx_api_keys_token_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_api_keys_token_id ON public.api_keys USING btree (token_id);
 
 
 --

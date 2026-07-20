@@ -20,12 +20,13 @@ func NewAPIKeyStore(queries *db.Queries) *APIKeyStore {
 }
 
 // CreateAPIKey inserts a new API key and returns the persisted record.
-func (s *APIKeyStore) CreateAPIKey(ctx context.Context, tenantID uuid.UUID, name, hashedKey string, scopes []string) (*apikey.APIKey, error) {
+func (s *APIKeyStore) CreateAPIKey(ctx context.Context, tenantID uuid.UUID, name, tokenID, hashedSecret string, scopes []string) (*apikey.APIKey, error) {
 	row, err := s.queries.CreateApiKey(ctx, db.CreateApiKeyParams{
-		TenantID:  db.UUIDToPGUUID(tenantID),
-		Name:      name,
-		HashedKey: hashedKey,
-		Scopes:    scopes,
+		TenantID:     db.UUIDToPGUUID(tenantID),
+		Name:         name,
+		TokenID:      tokenID,
+		HashedSecret: hashedSecret,
+		Scopes:       scopes,
 	})
 	if err != nil {
 		return nil, err
@@ -35,9 +36,9 @@ func (s *APIKeyStore) CreateAPIKey(ctx context.Context, tenantID uuid.UUID, name
 	return &domain, nil
 }
 
-// GetAPIKeyByHashedKey looks up an API key by its SHA-256 hash.
-func (s *APIKeyStore) GetAPIKeyByHashedKey(ctx context.Context, hashedKey string) (*apikey.APIKey, error) {
-	row, err := s.queries.GetApiKeyByHashedKey(ctx, hashedKey)
+// GetAPIKeyByTokenID looks up an API key by its token identifier.
+func (s *APIKeyStore) GetAPIKeyByTokenID(ctx context.Context, tokenID string) (*apikey.APIKey, error) {
+	row, err := s.queries.GetApiKeyByTokenId(ctx, tokenID)
 	if err != nil {
 		return nil, err
 	}

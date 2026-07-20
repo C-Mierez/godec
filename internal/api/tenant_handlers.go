@@ -10,12 +10,12 @@ import (
 )
 
 // TenantHandlers implements tenant management endpoints.
-type TenantHandlers struct {
+type TenantHandlers struct { //nolint:revive // name is intentional for clarity
 	service *tenant.Service
 }
 
 // NewTenantHandlers creates a TenantHandlers backed by the given service.
-func NewTenantHandlers(service *tenant.Service) *TenantHandlers {
+func NewTenantHandlers(service *tenant.Service) *TenantHandlers { //nolint:revive // name is intentional for clarity
 	return &TenantHandlers{
 		service: service,
 	}

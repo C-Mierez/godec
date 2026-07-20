@@ -47,14 +47,14 @@ type contextKey string
 const ContextKeyAPIKey = contextKey("apiKey")
 
 // APIKeyAuthenticator returns an OpenAPI authentication function that validates
-// the ApiKeyAuth scheme using the existing API key validator abstraction.
+// the BasicAuth scheme using the existing API key validator abstraction.
 func APIKeyAuthenticator(validator APIKeyValidator) openapi3filter.AuthenticationFunc {
 	return func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
 		if input == nil || input.RequestValidationInput == nil || input.RequestValidationInput.Request == nil {
 			return fmt.Errorf("invalid authentication input")
 		}
 
-		if input.SecuritySchemeName != "ApiKeyAuth" {
+		if input.SecuritySchemeName != "BasicAuth" {
 			return nil
 		}
 
@@ -62,12 +62,16 @@ func APIKeyAuthenticator(validator APIKeyValidator) openapi3filter.Authenticatio
 			return fmt.Errorf("api key validator is required")
 		}
 
-		key := input.RequestValidationInput.Request.Header.Get("X-API-Key")
-		if key == "" {
+		tokenID, tokenSecret, ok := input.RequestValidationInput.Request.BasicAuth()
+		if !ok {
 			return NewMissingKeyError()
 		}
 
-		apiKey, err := validator.ValidateAPIKey(ctx, key)
+		if tokenID == "" || tokenSecret == "" {
+			return NewInvalidKeyError()
+		}
+
+		apiKey, err := validator.ValidateAPIKey(ctx, tokenID, tokenSecret)
 		if err != nil {
 			return err
 		}

@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	ApiKeyAuthScopes apiKeyAuthContextKey = "ApiKeyAuth.Scopes"
+	BasicAuthScopes basicAuthContextKey = "BasicAuth.Scopes"
 )
 
 // Defines values for AuthErrorResponseCode.
@@ -86,9 +86,6 @@ type CreateAPIKeyRequest struct {
 
 // CreateAPIKeyResponse defines model for CreateAPIKeyResponse.
 type CreateAPIKeyResponse struct {
-	// ApiKey The actual API key (shown once, must be stored by user)
-	ApiKey string `json:"api_key"`
-
 	// Id UUID of the API key record
 	Id openapi_types.UUID `json:"id"`
 
@@ -98,8 +95,14 @@ type CreateAPIKeyResponse struct {
 	// Scopes List of scopes for this key
 	Scopes *[]string `json:"scopes,omitempty"`
 
+	// Secret Secret key (shown once, must be stored by user)
+	Secret string `json:"secret"`
+
 	// TenantId Tenant UUID that owns this key
 	TenantId openapi_types.UUID `json:"tenant_id"`
+
+	// TokenId Public token identifier (safe to log and display)
+	TokenId string `json:"token_id"`
 }
 
 // CreateTenantRequest defines model for CreateTenantRequest.
@@ -189,8 +192,8 @@ type NotFound = Error
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = AuthErrorResponse
 
-// apiKeyAuthContextKey is the context key for ApiKeyAuth security scheme
-type apiKeyAuthContextKey string
+// basicAuthContextKey is the context key for BasicAuth security scheme
+type basicAuthContextKey string
 
 // GetMediaUploadURLJSONBody defines parameters for GetMediaUploadURL.
 type GetMediaUploadURLJSONBody = map[string]interface{}
@@ -304,7 +307,7 @@ func (w *ServerInterfaceWrapper) CreateApiKey(ctx *echo.Context) error {
 func (w *ServerInterfaceWrapper) GetMediaUploadURL(ctx *echo.Context) error {
 	var err error
 
-	ctx.Set(string(ApiKeyAuthScopes), []string{})
+	ctx.Set(string(BasicAuthScopes), []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetMediaUploadURL(ctx)

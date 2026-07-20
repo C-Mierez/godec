@@ -44,13 +44,13 @@ The codebase uses **inverse interfaces** — the consumer (service) declares wha
 ```go
 // In internal/apikey/service.go — consumer defines:
 type Store interface {
-    CreateApiKey(ctx context.Context, tenantID uuid.UUID, name, hashedKey string, scopes []string) (*ApiKey, error)
-    GetApiKeyByHashedKey(ctx context.Context, hashedKey string) (*ApiKey, error)
+    CreateAPIKey(ctx context.Context, tenantID uuid.UUID, name, tokenID, hashedSecret string, scopes []string) (*APIKey, error)
+    GetAPIKeyByTokenID(ctx context.Context, tokenID string) (*APIKey, error)
 }
 
 // In internal/postgres/api_key.go — provider satisfies it implicitly:
-type ApiKeyStore struct { queries *db.Queries }
-func (s *ApiKeyStore) CreateApiKey(...) (*apikey.ApiKey, error) { ... }
+type APIKeyStore struct { queries *db.Queries }
+func (s *APIKeyStore) CreateAPIKey(...) (*apikey.APIKey, error) { ... }
 ```
 
 ### 2.3 Runtime Request Flow
@@ -67,7 +67,7 @@ func (s *ApiKeyStore) CreateApiKey(...) (*apikey.ApiKey, error) { ... }
 9.  main.go wraps Server in generated StrictHandler
 10. main.go registers all routes via api.RegisterHandlers(echo, strictHandler)
 11. Request arrives → Echo router → StrictHandler validates against OpenAPI spec
-12. If route requires ApiKeyAuth → middleware.APIKeyAuthenticator validates key
+12. If route requires BasicAuth → middleware.APIKeyAuthenticator validates credentials
 13. StrictHandler calls Server method → delegates to feature handler
 14. Feature handler calls service → service calls store interface
 15. Postgres adapter satisfies store, calls SQLC queries, maps rows to domain structs
@@ -94,7 +94,7 @@ func (s *ApiKeyStore) CreateApiKey(...) (*apikey.ApiKey, error) { ... }
 **apikey** is the clearest example of the intended style:
 - `model.go` — pure domain struct (`ApiKey` with UUID, scopes, timestamps)
 - `service.go` — `Store` interface + `Service` with `GenerateApiKey` and `ValidateAPIKey`
-- `crypto.go` — key generation (32 bytes entropy, `sk_godec_` prefix, SHA-256 hashing, constant-time comparison)
+- `crypto.go` — key generation (32 bytes entropy, `gdk_` prefix for token ID, `sk_` prefix for secret, SHA-256 hashing, constant-time comparison)
 
 **tenant** follows the same shape:
 - `model.go` — `Tenant` struct with `TenantStatus` enum (`active`/`inactive`)
@@ -189,7 +189,7 @@ The hand-written `transformers.go` provides conversion helpers between `pgtype` 
 
 Migrations create:
 - `tenants` table with UUIDv7 primary key, status check constraint, unique email index (partial, active only)
-- `api_keys` table with FK to tenants (CASCADE delete), hashed_key unique constraint, scopes array
+- `api_keys` table with FK to tenants (CASCADE delete), `token_id` unique constraint, `hashed_secret` column, scopes array
 - `update_updated_at_column()` trigger function applied to both tables
 - `expires_at` column added to api_keys
 
@@ -261,7 +261,8 @@ Indexes:
 | id | UUID | PK, default `uuidv7()` |
 | tenant_id | UUID | FK → tenants.id ON DELETE CASCADE |
 | name | TEXT | NOT NULL |
-| hashed_key | TEXT | NOT NULL, UNIQUE |
+| token_id | TEXT | NOT NULL, UNIQUE |
+| hashed_secret | TEXT | NOT NULL |
 | scopes | TEXT[] | NOT NULL, default `'{}'` |
 | created_at | TIMESTAMPTZ | NOT NULL, default `NOW()` |
 | updated_at | TIMESTAMPTZ | NOT NULL, auto-updated by trigger |
@@ -269,7 +270,7 @@ Indexes:
 | expires_at | TIMESTAMPTZ | NULLABLE |
 
 Indexes:
-- `idx_api_keys_hashed` — on `hashed_key`
+- `idx_api_keys_token_id` — on `token_id`
 - `idx_api_keys_tenant_id` — on `tenant_id`
 
 ---
@@ -289,20 +290,20 @@ Defined in `internal/api/spec.yaml`, implemented via generated strict-server pat
 | GET | `/v1/tenants/{id}` | `getTenant` | No | Get tenant by UUID |
 | PATCH | `/v1/tenants/{id}/status` | `setTenantStatus` | No | Update tenant status |
 | POST | `/v1/apikey/create_key` | `createApiKey` | No | Generate API key for tenant |
-| POST | `/v1/media/upload-url` | `getMediaUploadURL` | **ApiKeyAuth** | Get presigned upload URL (stub) |
+| POST | `/v1/media/upload-url` | `getMediaUploadURL` | **BasicAuth** | Get presigned upload URL (stub) |
 
-**Only `/v1/media/upload-url` requires authentication** via `X-API-Key` header. All other endpoints are currently unprotected.
+**Only `/v1/media/upload-url` requires authentication** via HTTP Basic Auth (`Authorization: Basic base64(tokenId:secret)`). All other endpoints are currently unprotected.
 
 ### Auth Flow
 
-1. Spec declares `security: - ApiKeyAuth: []` on the operation
+1. Spec declares `security: - BasicAuth: []` on the operation
 2. `echovalidator` middleware intercepts, calls `openapi3filter.ValidateRequest`
-3. `openapi3filter` calls `middleware.APIKeyAuthenticator` for `ApiKeyAuth` scheme
-4. Authenticator reads `X-API-Key` header
+3. `openapi3filter` calls `middleware.APIKeyAuthenticator` for `BasicAuth` scheme
+4. Authenticator extracts token ID and secret from HTTP Basic Auth header
 5. Calls `middleware.APIKeyValidator` → `apikey.Service.ValidateAPIKey`
-6. Service hashes key with SHA-256, looks up by hash, validates with constant-time compare
+6. Service looks up token ID, hashes secret with SHA-256, compares with stored hash using constant-time comparison
 7. Checks expiration if present
-8. On success, stores `*apikey.ApiKey` in request context under `ContextKeyApiKey`
+8. On success, stores `*apikey.ApiKey` in request context under `ContextKeyAPIKey`
 9. On failure, returns `AuthError` (401 or 403) which flows through centralized error handler in `main.go`
 
 ---
@@ -320,7 +321,6 @@ Source of truth: `internal/config/config.go` struct tags.
 | `GOOSE_DRIVER` | (none) | Goose migration driver |
 | `GOOSE_DBSTRING` | (none) | Goose connection string |
 | `GOOSE_MIGRATION_DIR` | `internal/postgres/migrations` | Goose migration dir |
-| `GOOSE_TABLE` | (none) | Goose migrations table |
 
 The `.env` file contains a live Neon PostgreSQL connection string. It is gitignored.
 
@@ -566,7 +566,7 @@ godec/
 
 1. **UUIDv7**: The database uses `uuidv7()` for primary keys (time-ordered UUIDs). The Go side uses `uuid.UUID` from `github.com/google/uuid`. Conversion goes through `db.PgUUIDToUUID` / `db.UuidToPGUUID` in `transformers.go`.
 
-2. **API key prefix**: Plain keys use the format `sk_godec_<base64>`. Only the SHA-256 hash is stored in the database. The plain key is shown **once** at creation time.
+2. **API key format**: Credentials use a split format — `gdk_<base64>` for the token ID (public identifier) and `sk_<base64>` for the secret (private credential). Only the SHA-256 hash of the secret is stored in the database. The full credentials are shown **once** at creation time.
 
 3. **`envsync` parses Go AST**: The `ci/envsync` tool literally parses `config.go` as a Go AST to extract `env` struct tags. If you add a new env var, you add the struct field with tags, then run `envsync fix` — it auto-generates the `.env` and `.env.example` entries.
 
