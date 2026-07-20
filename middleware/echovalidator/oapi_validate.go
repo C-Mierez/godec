@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/c-mierez/godec/internal/middleware"
+	"github.com/c-mierez/godec/middleware"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers"

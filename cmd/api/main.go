@@ -10,15 +10,16 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/c-mierez/godec/config"
 	"github.com/c-mierez/godec/internal/api"
 	apikeypkg "github.com/c-mierez/godec/internal/apikey"
-	"github.com/c-mierez/godec/internal/config"
-	"github.com/c-mierez/godec/internal/logging"
-	"github.com/c-mierez/godec/internal/middleware"
-	"github.com/c-mierez/godec/internal/middleware/echovalidator"
-	postgres "github.com/c-mierez/godec/internal/postgres"
+	apikeypg "github.com/c-mierez/godec/internal/apikey/postgres"
 	db "github.com/c-mierez/godec/internal/postgres/db"
 	tenantpkg "github.com/c-mierez/godec/internal/tenant"
+	tenantpg "github.com/c-mierez/godec/internal/tenant/postgres"
+	"github.com/c-mierez/godec/logging"
+	"github.com/c-mierez/godec/middleware"
+	"github.com/c-mierez/godec/middleware/echovalidator"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v5"
@@ -48,8 +49,8 @@ func main() {
 	defer pool.Close()
 
 	queries := db.New(pool)
-	apiKeyStore := postgres.NewAPIKeyStore(queries)
-	tenantStore := postgres.NewTenantStore(queries)
+	apiKeyStore := apikeypg.NewStore(queries)
+	tenantStore := tenantpg.NewStore(queries)
 	apiKeyService := apikeypkg.NewService(apiKeyStore)
 	tenantService := tenantpkg.NewService(tenantStore)
 

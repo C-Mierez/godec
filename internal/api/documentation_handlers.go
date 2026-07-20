@@ -5,7 +5,7 @@ import (
 	"context"
 	_ "embed"
 
-	"github.com/c-mierez/godec/internal/apidoc"
+	"github.com/c-mierez/godec/apidoc"
 	"github.com/getkin/kin-openapi/openapi3"
 )
 

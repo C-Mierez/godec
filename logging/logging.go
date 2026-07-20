@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/c-mierez/godec/internal/config"
+	"github.com/c-mierez/godec/config"
 )
 
 // Setup initializes the global slog logger with JSON output.
