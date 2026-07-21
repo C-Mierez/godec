@@ -4,16 +4,22 @@ Godec is a Mux-inspired media processing service.
 
 The objetive is to create a full-fledged group of microservices for handling upload, processing, orchestration, storage and streaming of both images and videos.
 
+The MVP is a monolith with a modular architecture. Migration to a microservices architecture is planned after core functionality is implemented.
+
 ## Tech
 
 - `Echo`
 - `pgx`
 - `godotenv` + `caarlos0's env`
+- [`golangci-lint`](https://golangci-lint.run/)
 - [`validator`](https://github.com/go-playground/validator)
+- [`sqlc`](https://github.com/sqlc-dev/sqlc)
+- [`goose`](https://github.com/pressly/goose)
+- [`oapi-codegen`](https://github.com/getkin/kin-openapi)
 
 ## Architecture Walkthrough
 
-See [docs/architecture-walkthrough.md](docs/architecture-walkthrough.md) for the package-by-feature layout, runtime flow, and maintenance rules used by the new architecture.
+See [docs/architecture.md](docs/architecture.md) for the package-by-feature layout, runtime flow, and maintenance rules used by the new architecture.
 
 ## API Code Generation
 
